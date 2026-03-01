@@ -60,7 +60,9 @@ app.post('/webhook/new-case', upload.single('pdf'), (req, res) => {
         created_at: new Date().toISOString()
     };
 
-    const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+    const host = req.get('host');
+    const protocol = req.protocol || 'http';
+    const baseUrl = process.env.BASE_URL || `${protocol}://${host}`;
     const form_url = `${baseUrl}/verify.html?id=${case_id}`;
 
     console.log(`New case created: ${case_id}. Form URL: ${form_url}`);
