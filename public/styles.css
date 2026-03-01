@@ -296,6 +296,20 @@ td {
     overflow: hidden;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(10px);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.panel.fullscreen {
+    position: fixed;
+    top: 2rem;
+    left: 2rem;
+    right: 2rem;
+    bottom: 2rem;
+    z-index: 9999;
+    background: #1e1e24;
+    /* Darker bg for PDF frame */
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.85);
+    /* Dims background */
 }
 
 .panel-header {
@@ -475,14 +489,59 @@ td {
     }
 }
 
-/* Success Screen */
+/* Success Screen Animations */
 .success-screen {
-    text-align: center;
-    padding: 4rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    animation: fadeInScale 0.6s ease-out forwards;
 }
 
-.success-icon {
-    font-size: 4rem;
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+#status-icon {
+    font-size: 5rem;
     color: var(--success);
     margin-bottom: 1.5rem;
+    animation: bouncePop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.2s both;
+}
+
+@keyframes bouncePop {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.success-screen h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+}
+
+.success-screen p {
+    font-size: 1.2rem;
+    color: var(--text-muted);
 }
