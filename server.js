@@ -5,6 +5,7 @@ const path = require('path');
 const dotenv = require('dotenv');
 const multer = require('multer');
 const fs = require('fs');
+const axios = require('axios');
 
 dotenv.config();
 
@@ -127,19 +128,43 @@ app.get('/api/case/:id', (req, res) => {
 });
 
 app.post('/api/verify', async (req, res) => {
-    const { case_id, action, fields, paralegal_notes, matter_id, template_id } = req.body;
+    // Add email_uuid from payload
+    const { case_id, action, fields, paralegal_notes, matter_id, template_id, email_uuid } = req.body;
     const caseData = pendingVerifications[case_id];
 
-    if (!caseData || caseData.submitted) return res.status(404).json({ error: "Invalid case" });
+    if (!caseData || caseData.submitted) return res.status(404).json({ error: "Invalid case or already submitted." });
 
-    caseData.submitted = true;
-
-    // Send to n8n
+    // Send to n8n webhook
     const n8nUrl = "https://n8n-latest-ydsf.onrender.com/webhook/hit";
 
+    // Construct final payload
+    const finalPayload = {
+        case_id,
+        action,
+        matter_id,
+        template_id,
+        email_uuid,
+        fields,
+        paralegal_notes
+    };
+
     try {
-        // Log explicitly with new metadata fields
-        console.log(`Pushing to n8n: ${n8nUrl}`, { case_id, action, matter_id, template_id, fields, paralegal_notes });
+        console.log(`Pushing to n8n: ${n8nUrl}`, finalPayload);
+
+        // Use axios instead of fetch to avoid issues on older Node versions
+        const webhookResponse = await axios.post(n8nUrl, finalPayload, {
+            headers: { 'Content-Type': 'application/json' },
+            validateStatus: function (status) {
+                return status < 500; // Resolve only if status is < 500
+            }
+        });
+
+        if (webhookResponse.status >= 400) {
+            throw new Error(`n8n responded with status ${webhookResponse.status}: ${JSON.stringify(webhookResponse.data)}`);
+        }
+
+        // Only mark submitted if webhook successfully fired
+        caseData.submitted = true;
 
         // Add to dashboard list for visualization
         cases.unshift({
@@ -147,6 +172,7 @@ app.post('/api/verify', async (req, res) => {
             case_id,
             matter_id,
             template_id,
+            email_uuid,
             status: action,
             created_at: caseData.created_at,
             approved_at: new Date().toISOString()
@@ -154,7 +180,8 @@ app.post('/api/verify', async (req, res) => {
 
         res.status(200).json({ status: "success" });
     } catch (error) {
-        res.status(500).json({ error: "Failed to notify n8n" });
+        console.error("Failed to notify n8n:", error);
+        res.status(500).json({ error: error.message || "Failed to notify downstream webhook." });
     }
 });
 
