@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Law Firm Intake Dashboard - Swans</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-gavel gold"></i>
+            <span>Richards & <span class="gold">Law</span></span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="#"><i class="fas fa-folder"></i> All Cases</a></li>
+            <li><a href="#"><i class="fas fa-chart-line"></i> Analytics</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer" style="position: absolute; bottom: 2rem; color: #636e72; font-size: 0.75rem;">
+            Powered by Swans AI
+        </div>
+    </div>
+
+    <main class="main-content">
+        <header class="header">
+            <div>
+                <h1>Real-Time Intake Dashboard</h1>
+                <span class="date" id="current-date"></span>
+            </div>
+            <div class="header-actions">
+                <button class="badge badge-approved" style="padding: 10px 20px; cursor: pointer;" onclick="refreshDashboard()">
+                    <i class="fas fa-sync"></i> Refresh Data
+                </button>
+            </div>
+        </header>
+
+        <section class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-title">Total Cases Processed</span>
+                <span class="stat-value" id="total-cases">0</span>
+                <span class="stat-trend up"><i class="fas fa-arrow-up"></i> 12% vs last month</span>
+            </div>
+            <div class="stat-card urgent">
+                <span class="stat-title">Pending Verification</span>
+                <span class="stat-value" id="pending-count">0</span>
+                <span class="stat-trend" style="color: var(--warning)">Requires immediate action</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-title">Approval Rate</span>
+                <span class="stat-value" id="approval-rate">0%</span>
+                <span class="stat-trend" id="rejected-count">0 Rejected</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-title">Avg Confidence</span>
+                <span class="stat-value" id="avg-confidence">0%</span>
+                <span class="stat-trend" id="confidence-trend"><i class="fas fa-check-circle"></i> High Quality Extraction</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-title">Speed-to-Lead</span>
+                <span class="stat-value" id="speed-to-lead">0m</span>
+                <span class="stat-trend"><i class="fas fa-bolt"></i> Average turnaround</span>
+            </div>
+            <div class="stat-card urgent">
+                <span class="stat-title">SOL Risk Alerts</span>
+                <span class="stat-value" id="sol-risk-count">0</span>
+                <span class="stat-trend" style="color: var(--danger)"><i class="fas fa-exclamation-triangle"></i> Within 90 days</span>
+            </div>
+        </section>
+
+        <section class="table-container">
+            <div class="table-header">
+                <h2>Live Intake Queue</h2>
+                <div class="search-bar">
+                    <input type="text" placeholder="Search by name or case ID..." style="padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd;">
+                </div>
+            </div>
+            <table id="cases-table">
+                <thead>
+                    <tr>
+                        <th>Case ID</th>
+                        <th>Client Name</th>
+                        <th>Accident Date</th>
+                        <th>Confidence</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="cases-body">
+                    <!-- Data injected via JS -->
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <script src="dashboard.js"></script>
+    <script>
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+    </script>
+</body>
+</html>

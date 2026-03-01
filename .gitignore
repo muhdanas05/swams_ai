@@ -1,0 +1,10 @@
+node_modules
+.env
+out.log
+ngrok.zip
+ngrok.exe
+ngrok-v3
+ngrok_new
+ngrok_latest.zip
+public/uploads/*
+!public/uploads/.gitkeep
