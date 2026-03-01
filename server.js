@@ -39,23 +39,31 @@ let pendingVerifications = {};
 app.post('/webhook/new-case', upload.single('pdf'), (req, res) => {
     let rawFields;
     try {
-        // Handle n8n sending fields as a JSON string or individual fields
-        rawFields = req.body.fields ? JSON.parse(req.body.fields) : req.body;
-        // If n8n sends an array, take the first element
-        if (Array.isArray(rawFields)) rawFields = rawFields[0];
+        // Log incoming body for debugging in Railway logs
+        console.log("Webhook body received:", JSON.stringify(req.body));
+
+        // If 'fields' exists, parse it. Otherwise use top level body.
+        const inputData = req.body.fields ? (typeof req.body.fields === 'string' ? JSON.parse(req.body.fields) : req.body.fields) : req.body;
+
+        // Handle case where body is an array (directly or inside 'fields')
+        rawFields = Array.isArray(inputData) ? inputData[0] : inputData;
     } catch (e) {
+        console.error("Payload parsing error:", e);
         rawFields = req.body;
     }
 
     const case_id = rawFields.case_id || Date.now().toString();
     const pdfPath = req.file ? `/uploads/${req.file.filename}` : null;
 
+    // Extract confidence from either the top level body or the nested fields
+    const confidence = req.body.confidence_score || (rawFields ? rawFields.confidence_score : null);
+
     // Store in verification queue
     pendingVerifications[case_id] = {
         ...rawFields,
         case_id,
         pdf_url: pdfPath,
-        confidence_score: req.body.confidence_score || (rawFields ? rawFields.confidence_score : null),
+        confidence_score: confidence,
         submitted: false,
         created_at: new Date().toISOString()
     };

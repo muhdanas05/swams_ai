@@ -21,14 +21,17 @@ async function loadCaseData() {
         originalCaseData = await response.json();
 
         let dataToRender = originalCaseData;
+        // The server stores combined data at top level, but let's be safe
         if (originalCaseData.fields) {
             dataToRender = { ...originalCaseData, ...originalCaseData.fields };
         }
 
         if (dataToRender.pdf_url) {
-            const btn = document.getElementById('open-pdf-btn');
-            if (btn) btn.style.display = 'block';
-            document.getElementById('pdf-iframe').src = dataToRender.pdf_url;
+            const iframe = document.getElementById('pdf-iframe');
+            if (iframe) {
+                // Append #view=FitH to PDF URL for better initial view inside iframe
+                iframe.src = `${dataToRender.pdf_url}#view=FitH`;
+            }
         }
 
         renderUI(dataToRender);
@@ -41,16 +44,17 @@ async function loadCaseData() {
 }
 
 function togglePDF() {
-    // We'll keep it as a toggle but default to open in CSS
-    const layout = document.getElementById('app-layout');
     const pdfPanel = document.getElementById('pdf-panel');
+    const layout = document.getElementById('app-layout');
 
     isPdfOpen = !isPdfOpen;
 
     if (isPdfOpen) {
-        pdfPanel.style.display = 'flex';
+        pdfPanel.classList.remove('hidden');
+        layout.style.gridTemplateColumns = "350px 420px 1.8fr";
     } else {
-        pdfPanel.style.display = 'none';
+        pdfPanel.classList.add('hidden');
+        layout.style.gridTemplateColumns = "1fr 1fr";
     }
 }
 
@@ -85,10 +89,12 @@ function renderUI(data) {
 
     fields.forEach(f => {
         let value = data[f.key];
-        const isEmpty = (value === undefined || value === null || String(value).trim() === "" || value === "N/A");
-        const displayValue = isEmpty ? "N/A" : value;
+        // Ensure values are strings for trim
+        const stringValue = (value !== null && value !== undefined) ? String(value) : "";
+        const isEmpty = (stringValue.trim() === "" || stringValue.toLowerCase() === "n/a");
+        const displayValue = isEmpty ? "N/A" : stringValue;
 
-        const isLowConfidence = (data.confidence_score !== undefined && data.confidence_score < 75);
+        const isLowConfidence = (data.confidence_score !== undefined && data.confidence_score !== null && data.confidence_score < 75);
 
         // Read-only
         const infoGroup = document.createElement('div');
@@ -102,7 +108,7 @@ function renderUI(data) {
         // Form
         const inputGroup = document.createElement('div');
         inputGroup.className = 'input-group';
-        const inputValue = isEmpty ? "" : value;
+        const inputValue = isEmpty ? "" : stringValue;
 
         let inputHtml = '';
         if (f.type === 'textarea') {
@@ -121,7 +127,10 @@ function renderUI(data) {
         formFields.appendChild(inputGroup);
     });
 }
-// handleAction and showError stay the same...
+
+// Global scope for callbacks
+window.togglePDF = togglePDF;
+
 async function handleAction(action) {
     const fields = {};
     document.querySelectorAll('[id^="field-"]').forEach(input => {
@@ -148,13 +157,16 @@ function showSuccess(action) {
     document.getElementById('main-ui').classList.add('hidden');
     document.getElementById('success-screen').classList.remove('hidden');
     if (action === 'rejected') {
-        document.getElementById('status-icon').innerHTML = '<i class="fas fa-times-circle"></i>';
-        document.getElementById('status-icon').style.color = "var(--danger)";
-        document.getElementById('success-title').innerText = "Case Rejected";
+        const icon = document.getElementById('status-icon');
+        const title = document.getElementById('success-title');
+        if (icon) { icon.innerHTML = '<i class="fas fa-times-circle"></i>'; icon.style.color = "var(--danger)"; }
+        if (title) title.innerText = "Case Rejected";
     }
 }
+
 function showError(msg) {
-    document.getElementById('loading').innerHTML = `<div style="text-align:center"><p style="color:var(--danger)">${msg}</p></div>`;
+    const loading = document.getElementById('loading');
+    if (loading) loading.innerHTML = `<div style="text-align:center"><p style="color:var(--danger)">${msg}</p></div>`;
 }
 
 loadCaseData();

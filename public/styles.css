@@ -276,8 +276,8 @@ td {
 /* Verification UX Split Layout */
 .verification-layout {
     display: grid;
-    grid-template-columns: 320px 400px 1fr;
-    gap: 2.5rem;
+    grid-template-columns: 350px 420px 1.8fr;
+    gap: 3.5rem;
     padding: 0 4rem 3rem 4rem;
     height: calc(100vh - 120px);
     width: 100%;
