@@ -29,8 +29,8 @@ async function loadCaseData() {
         if (dataToRender.pdf_url) {
             const iframe = document.getElementById('pdf-iframe');
             if (iframe) {
-                // Append #view=FitH to PDF URL for better initial view inside iframe
-                iframe.src = `${dataToRender.pdf_url}#view=FitH`;
+                // Just use the URL so the native browser PDF tools (magnifying, etc.) appear
+                iframe.src = `${dataToRender.pdf_url}`;
             }
         }
 
@@ -43,18 +43,30 @@ async function loadCaseData() {
     }
 }
 
+let isPdfFullscreen = false;
 function togglePDF() {
-    const pdfPanel = document.getElementById('pdf-panel');
     const layout = document.getElementById('app-layout');
+    const elementsToHide = document.querySelectorAll('.panel:not(#pdf-panel)');
+    const btnIcon = document.querySelector('#pdf-panel .panel-header button i');
 
-    isPdfOpen = !isPdfOpen;
+    isPdfFullscreen = !isPdfFullscreen;
 
-    if (isPdfOpen) {
-        pdfPanel.classList.remove('hidden');
-        layout.style.gridTemplateColumns = "350px 420px 1.8fr";
+    if (isPdfFullscreen) {
+        layout.style.gridTemplateColumns = "0px 0px 1fr";
+        layout.style.gap = "0";
+        elementsToHide.forEach(el => el.style.display = 'none');
+        if (btnIcon) {
+            btnIcon.classList.remove('fa-expand');
+            btnIcon.classList.add('fa-compress');
+        }
     } else {
-        pdfPanel.classList.add('hidden');
-        layout.style.gridTemplateColumns = "1fr 1fr";
+        layout.style.gridTemplateColumns = "350px 420px 1.8fr";
+        layout.style.gap = "2.5rem";
+        elementsToHide.forEach(el => el.style.display = 'flex');
+        if (btnIcon) {
+            btnIcon.classList.remove('fa-compress');
+            btnIcon.classList.add('fa-expand');
+        }
     }
 }
 
@@ -140,7 +152,12 @@ async function handleAction(action) {
     const payload = {
         case_id: caseId,
         action: action,
-        fields: fields,
+        matter_id: originalCaseData ? originalCaseData.matter_id : null,
+        template_id: originalCaseData ? originalCaseData.template_id : null,
+        fields: {
+            ...originalCaseData, // send all previous fields as requested
+            ...fields // overwrite with new user edits
+        },
         paralegal_notes: document.getElementById('paralegal-notes').value.trim() || "N/A"
     };
     try {

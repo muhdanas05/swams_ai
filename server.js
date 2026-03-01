@@ -37,15 +37,39 @@ let pendingVerifications = {};
 // 1. New Case Webhook: Triggered by n8n
 // Accepts multipart/form-data with fields and a "pdf" file
 app.post('/webhook/new-case', upload.single('pdf'), (req, res) => {
-    let rawFields;
+    let rawFields = {};
     try {
-        // Log incoming body for debugging in Railway logs
-        console.log("Webhook body received:", JSON.stringify(req.body));
+        console.log("Incoming Webhook keys:", Object.keys(req.body));
 
-        // If 'fields' exists, parse it. Otherwise use top level body.
-        const inputData = req.body.fields ? (typeof req.body.fields === 'string' ? JSON.parse(req.body.fields) : req.body.fields) : req.body;
+        let inputData = req.body;
 
-        // Handle case where body is an array (directly or inside 'fields')
+        // Common keys check
+        if (req.body.fields) inputData = req.body.fields;
+        else if (req.body.data) inputData = req.body.data;
+        else if (req.body.payload) inputData = req.body.payload;
+
+        // Aggressive search for JSON strings in multipart form data
+        if (Object.keys(req.body).length > 0) {
+            for (const val of Object.values(req.body)) {
+                if (typeof val === 'string' && (val.trim().startsWith('[') || val.trim().startsWith('{'))) {
+                    try {
+                        const cleaned = val.replace(/,\s*([\]}])/g, '$1'); // fix trailing commas
+                        const parsed = JSON.parse(cleaned);
+                        if (Array.isArray(parsed) || Object.keys(parsed).length > 0) {
+                            inputData = parsed;
+                            break;
+                        }
+                    } catch (e) { }
+                }
+            }
+        }
+
+        if (typeof inputData === 'string') {
+            try {
+                inputData = JSON.parse(inputData.replace(/,\s*([\]}])/g, '$1'));
+            } catch (e) { }
+        }
+
         rawFields = Array.isArray(inputData) ? inputData[0] : inputData;
     } catch (e) {
         console.error("Payload parsing error:", e);
