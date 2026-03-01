@@ -147,8 +147,22 @@ app.get('/api/cases', async (req, res) => {
             };
         });
 
-        // Return sheet cases + recent local pending cases that might not be synced to sheets yet
-        res.json(mappedCases);
+        // Include pending cases still in the queue (not yet written to sheets)
+        const pendingLocal = Object.values(pendingVerifications)
+            .filter(pv => !pv.submitted)
+            .map(pv => ({
+                case_id: pv.case_id,
+                client_plate_number: pv.client_name || pv.defendant_name || pv.client_plate_number || 'TBD',
+                accident_date: pv.accident_date || 'N/A',
+                confidence_score: parseInt(pv.confidence_score) || 0,
+                status: 'pending',
+                created_at: pv.created_at || new Date().toISOString(),
+                approved_at: null,
+                sol_date: pv.statute_of_limitations_date || null
+            }));
+
+        // Return combined list, with pending items at the top
+        res.json([...pendingLocal, ...mappedCases]);
     } catch (err) {
         console.error("Error fetching Google Sheet:", err);
         res.status(500).json({ error: "Failed to fetch from Google Sheets" });
