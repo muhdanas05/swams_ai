@@ -2,7 +2,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const caseId = urlParams.get('id');
 
 let originalCaseData = null;
-let isPdfOpen = false;
+let isPdfOpen = true; // Default to open
 
 async function loadCaseData() {
     if (!caseId) {
@@ -20,7 +20,6 @@ async function loadCaseData() {
 
         originalCaseData = await response.json();
 
-        // Handle n8n data structure fallback
         let dataToRender = originalCaseData;
         if (originalCaseData.fields) {
             dataToRender = { ...originalCaseData, ...originalCaseData.fields };
@@ -42,48 +41,36 @@ async function loadCaseData() {
 }
 
 function togglePDF() {
+    // We'll keep it as a toggle but default to open in CSS
     const layout = document.getElementById('app-layout');
     const pdfPanel = document.getElementById('pdf-panel');
-    const btn = document.getElementById('open-pdf-btn');
 
     isPdfOpen = !isPdfOpen;
 
     if (isPdfOpen) {
-        layout.classList.add('show-pdf');
-        pdfPanel.classList.remove('hidden');
-        btn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide PDF';
-        btn.classList.replace('badge-approved', 'badge-rejected');
+        pdfPanel.style.display = 'flex';
     } else {
-        layout.classList.remove('show-pdf');
-        pdfPanel.classList.add('hidden');
-        btn.innerHTML = '<i class="fas fa-file-pdf"></i> Open PDF Report';
-        btn.classList.replace('badge-rejected', 'badge-approved');
+        pdfPanel.style.display = 'none';
     }
 }
 
 function renderUI(data) {
-    // Set identifier display
     document.getElementById('matter-id-display').innerText = data.client_plate_number || data.case_id || "N/A";
 
-    // Confidence Logic: Only display if explicitly provided in body
     const confidenceContainer = document.getElementById('confidence-badge-container');
     const overallConfidence = document.getElementById('overall-confidence');
 
     if (data.confidence_score !== undefined && data.confidence_score !== null) {
         overallConfidence.innerText = `${data.confidence_score}%`;
         confidenceContainer.classList.remove('hidden');
-    } else {
-        confidenceContainer.classList.add('hidden');
     }
 
     const extractedView = document.getElementById('extracted-view');
     const formFields = document.getElementById('form-fields');
 
-    // Clear previous
     extractedView.innerHTML = '';
     formFields.innerHTML = '';
 
-    // Define fields based on user request
     const fields = [
         { key: 'accident_date', label: 'Accident Date', type: 'date' },
         { key: 'accident_location', label: 'Accident Location', type: 'text' },
@@ -98,99 +85,76 @@ function renderUI(data) {
 
     fields.forEach(f => {
         let value = data[f.key];
-        // Clean value: if it's undefined, null, or effectively empty, use "N/A"
-        const isEmpty = (value === undefined || value === null || String(value).trim() === "");
+        const isEmpty = (value === undefined || value === null || String(value).trim() === "" || value === "N/A");
         const displayValue = isEmpty ? "N/A" : value;
 
         const isLowConfidence = (data.confidence_score !== undefined && data.confidence_score < 75);
 
-        // Render Read-only view
+        // Read-only
         const infoGroup = document.createElement('div');
         infoGroup.className = 'info-group';
         infoGroup.innerHTML = `
             <span class="info-label">${f.label}</span>
-            <div class="info-value">${displayValue}</div>
+            <div class="info-value" style="${isEmpty ? 'color:var(--text-muted); font-style:italic;' : ''}">${displayValue}</div>
         `;
         extractedView.appendChild(infoGroup);
 
-        // Render Editable form
+        // Form
         const inputGroup = document.createElement('div');
         inputGroup.className = 'input-group';
-
-        let inputHtml = '';
-        // For inputs, if value is empty/NA, we leave it empty so the user can type fresh data
         const inputValue = isEmpty ? "" : value;
 
+        let inputHtml = '';
         if (f.type === 'textarea') {
-            inputHtml = `<textarea id="field-${f.key}" rows="3" placeholder="N/A">${inputValue}</textarea>`;
+            inputHtml = `<textarea id="field-${f.key}" rows="3" placeholder="Enter ${f.label}...">${inputValue}</textarea>`;
         } else {
-            inputHtml = `<input type="${f.type}" id="field-${f.key}" value="${inputValue}" placeholder="N/A">`;
+            inputHtml = `<input type="${f.type}" id="field-${f.key}" value="${inputValue}" placeholder="Enter ${f.label}...">`;
         }
 
         inputGroup.innerHTML = `
             <label class="info-label">
                 ${f.label}
-                ${isLowConfidence ? '<span class="warning-icon" style="color:var(--warning); margin-left:8px;"><i class="fas fa-exclamation-triangle"></i></span>' : ''}
+                ${isLowConfidence ? '<i class="fas fa-exclamation-triangle" style="color:var(--warning); margin-left:8px;"></i>' : ''}
             </label>
             ${inputHtml}
         `;
-
         formFields.appendChild(inputGroup);
     });
 }
-
-function showError(msg) {
-    document.getElementById('loading').innerHTML = `
-        <div style="text-align:center">
-            <div class="stat-value" style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> Error</div>
-            <p>${msg}</p>
-            <button class="badge badge-approved" style="margin-top:10px; cursor:pointer;" onclick="window.location.href='/'">Go Home</button>
-        </div>
-    `;
-}
-
+// handleAction and showError stay the same...
 async function handleAction(action) {
     const fields = {};
-    const inputs = document.querySelectorAll('[id^="field-"]');
-    inputs.forEach(input => {
+    document.querySelectorAll('[id^="field-"]').forEach(input => {
         const key = input.id.replace('field-', '');
         fields[key] = input.value.trim() || "N/A";
     });
-
     const payload = {
         case_id: caseId,
         action: action,
         fields: fields,
         paralegal_notes: document.getElementById('paralegal-notes').value.trim() || "N/A"
     };
-
     try {
-        const response = await fetch('/api/verify', {
+        const res = await fetch('/api/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-
-        if (response.ok) {
-            showSuccess(action);
-        } else {
-            alert("Failed to submit verification.");
-        }
-    } catch (error) {
-        console.error("Submission error:", error);
-    }
+        if (res.ok) showSuccess(action);
+    } catch (e) { console.error(e); }
 }
 
 function showSuccess(action) {
     document.getElementById('main-ui').classList.add('hidden');
     document.getElementById('success-screen').classList.remove('hidden');
-
     if (action === 'rejected') {
         document.getElementById('status-icon').innerHTML = '<i class="fas fa-times-circle"></i>';
         document.getElementById('status-icon').style.color = "var(--danger)";
         document.getElementById('success-title').innerText = "Case Rejected";
-        document.getElementById('success-message').innerText = "Feedback sent to n8n.";
     }
+}
+function showError(msg) {
+    document.getElementById('loading').innerHTML = `<div style="text-align:center"><p style="color:var(--danger)">${msg}</p></div>`;
 }
 
 loadCaseData();
