@@ -119,7 +119,41 @@ app.post('/webhook/sheets-update', (req, res) => {
     }
 });
 
-app.get('/api/cases', (req, res) => res.json(cases));
+const csvtojson = require('csvtojson');
+
+app.get('/api/cases', async (req, res) => {
+    try {
+        const sheetUrl = 'https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/export?format=csv&gid=270289194';
+        const response = await axios.get(sheetUrl, { responseType: 'text' });
+
+        const rawJson = await csvtojson().fromString(response.data);
+
+        // Map Google Sheet columns to Dashboard expected keys
+        const mappedCases = rawJson.map(row => {
+            let status = row.status ? row.status.toLowerCase() : 'pending';
+            if (status === 'completed' || status === 'approved') status = 'approved';
+            else if (status === 'rejected') status = 'rejected';
+            else status = 'pending';
+
+            return {
+                case_id: row.euuid || row.matter_id || Date.now().toString(),
+                client_plate_number: row.client_name || row.vehicle_info || 'Unknown',
+                accident_date: row.accident_date,
+                confidence_score: parseInt(row.confidence_score) || 0,
+                status: status,
+                created_at: row.created_at || new Date().toISOString(),
+                approved_at: row.approved_at || null,
+                sol_date: row.sol_date || null
+            };
+        });
+
+        // Return sheet cases + recent local pending cases that might not be synced to sheets yet
+        res.json(mappedCases);
+    } catch (err) {
+        console.error("Error fetching Google Sheet:", err);
+        res.status(500).json({ error: "Failed to fetch from Google Sheets" });
+    }
+});
 
 app.get('/api/case/:id', (req, res) => {
     const data = pendingVerifications[req.params.id];
