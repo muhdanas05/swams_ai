@@ -41,6 +41,14 @@ app.post('/webhook/new-case', upload.single('pdf'), (req, res) => {
     try {
         console.log("Incoming Webhook keys:", Object.keys(req.body));
 
+        const looseJsonParse = (str) => {
+            if (typeof str !== 'string') return str;
+            let s = str.replace(/([\]}0-9a-zA-Z_"])\s*\n\s*"/g, '$1,\n"').replace(/,\s*([\]}])/g, '$1');
+            try { return JSON.parse(s); } catch (e) {
+                try { return (new Function('return ' + s))(); } catch (err) { return str; }
+            }
+        };
+
         let inputData = req.body;
 
         // Common keys check
@@ -48,32 +56,30 @@ app.post('/webhook/new-case', upload.single('pdf'), (req, res) => {
         else if (req.body.data) inputData = req.body.data;
         else if (req.body.payload) inputData = req.body.payload;
 
+        if (typeof inputData === 'string') {
+            inputData = looseJsonParse(inputData);
+        }
+
         // Aggressive search for JSON strings in multipart form data
-        if (Object.keys(req.body).length > 0) {
-            for (const val of Object.values(req.body)) {
-                if (typeof val === 'string' && (val.trim().startsWith('[') || val.trim().startsWith('{'))) {
-                    try {
-                        const cleaned = val.replace(/,\s*([\]}])/g, '$1'); // fix trailing commas
-                        const parsed = JSON.parse(cleaned);
-                        if (Array.isArray(parsed) || Object.keys(parsed).length > 0) {
+        if (typeof inputData !== 'object' || inputData === null) {
+            if (Object.keys(req.body).length > 0) {
+                for (const val of Object.values(req.body)) {
+                    if (typeof val === 'string' && (val.trim().startsWith('[') || val.trim().startsWith('{'))) {
+                        let parsed = looseJsonParse(val);
+                        if (typeof parsed === 'object' && parsed !== null) {
                             inputData = parsed;
                             break;
                         }
-                    } catch (e) { }
+                    }
                 }
             }
         }
 
-        if (typeof inputData === 'string') {
-            try {
-                inputData = JSON.parse(inputData.replace(/,\s*([\]}])/g, '$1'));
-            } catch (e) { }
-        }
-
         rawFields = Array.isArray(inputData) ? inputData[0] : inputData;
+        if (typeof rawFields !== 'object' || rawFields === null) rawFields = {};
     } catch (e) {
         console.error("Payload parsing error:", e);
-        rawFields = req.body;
+        rawFields = req.body || {};
     }
 
     const case_id = rawFields.case_id || Date.now().toString();
@@ -121,7 +127,7 @@ app.get('/api/case/:id', (req, res) => {
 });
 
 app.post('/api/verify', async (req, res) => {
-    const { case_id, action, fields, paralegal_notes } = req.body;
+    const { case_id, action, fields, paralegal_notes, matter_id, template_id } = req.body;
     const caseData = pendingVerifications[case_id];
 
     if (!caseData || caseData.submitted) return res.status(404).json({ error: "Invalid case" });
@@ -132,14 +138,15 @@ app.post('/api/verify', async (req, res) => {
     const n8nUrl = "https://n8n-latest-ydsf.onrender.com/webhook/hit";
 
     try {
-        // In a real environment, you'd use node-fetch or axios here.
-        // For this demo, we'll simulate the successful push to n8n.
-        console.log(`Pushing to n8n: ${n8nUrl}`, { case_id, action, fields });
+        // Log explicitly with new metadata fields
+        console.log(`Pushing to n8n: ${n8nUrl}`, { case_id, action, matter_id, template_id, fields, paralegal_notes });
 
         // Add to dashboard list for visualization
         cases.unshift({
             ...fields,
             case_id,
+            matter_id,
+            template_id,
             status: action,
             created_at: caseData.created_at,
             approved_at: new Date().toISOString()
