@@ -2,6 +2,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const caseId = urlParams.get('id');
 
 let originalCaseData = null;
+let isPdfOpen = false;
 
 async function loadCaseData() {
     if (!caseId) {
@@ -19,12 +20,16 @@ async function loadCaseData() {
 
         originalCaseData = await response.json();
 
-        // Handle n8n data structure
+        // Handle n8n data structure fallback
         let dataToRender = originalCaseData;
+        if (originalCaseData.fields) {
+            dataToRender = { ...originalCaseData, ...originalCaseData.fields };
+        }
 
-        if (originalCaseData.pdf_url) {
+        if (dataToRender.pdf_url) {
             const btn = document.getElementById('open-pdf-btn');
             if (btn) btn.style.display = 'block';
+            document.getElementById('pdf-iframe').src = dataToRender.pdf_url;
         }
 
         renderUI(dataToRender);
@@ -36,19 +41,30 @@ async function loadCaseData() {
     }
 }
 
-function openPDF() {
-    if (originalCaseData && originalCaseData.pdf_url) {
-        window.open(originalCaseData.pdf_url, '_blank');
+function togglePDF() {
+    const layout = document.getElementById('app-layout');
+    const pdfPanel = document.getElementById('pdf-panel');
+    const btn = document.getElementById('open-pdf-btn');
+
+    isPdfOpen = !isPdfOpen;
+
+    if (isPdfOpen) {
+        layout.classList.add('show-pdf');
+        pdfPanel.classList.remove('hidden');
+        btn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide PDF';
+        btn.classList.replace('badge-approved', 'badge-rejected');
+    } else {
+        layout.classList.remove('show-pdf');
+        pdfPanel.classList.add('hidden');
+        btn.innerHTML = '<i class="fas fa-file-pdf"></i> Open PDF Report';
+        btn.classList.replace('badge-rejected', 'badge-approved');
     }
 }
 
 function renderUI(data) {
-    // Set Page Title
-    document.getElementById('page-title').innerText = `Verifying Intake`;
-
-    // Use plate number or case ID as identifier
+    // Set identifier display
     document.getElementById('matter-id-display').innerText = data.client_plate_number || data.case_id || "N/A";
-    document.getElementById('overall-confidence').innerText = `${data.confidence_score}%`;
+    document.getElementById('overall-confidence').innerText = `${data.confidence_score || 0}%`;
     document.getElementById('confidence-badge-container').classList.remove('hidden');
 
     const extractedView = document.getElementById('extracted-view');
@@ -72,7 +88,12 @@ function renderUI(data) {
     ];
 
     fields.forEach(f => {
-        const value = data[f.key] || "";
+        let value = data[f.key];
+        // If it's undefined, null, or empty string, use "N/A"
+        if (value === undefined || value === null || value === "") {
+            value = "N/A";
+        }
+
         const isLowConfidence = (data.confidence_score < 75);
 
         // Render Read-only view
@@ -80,7 +101,7 @@ function renderUI(data) {
         infoGroup.className = 'info-group';
         infoGroup.innerHTML = `
             <span class="info-label">${f.label}</span>
-            <div class="info-value">${value || 'N/A'}</div>
+            <div class="info-value">${value}</div>
         `;
         extractedView.appendChild(infoGroup);
 
@@ -89,10 +110,13 @@ function renderUI(data) {
         inputGroup.className = 'input-group';
 
         let inputHtml = '';
+        // For inputs, if value is "N/A", we leave it empty so the user can type fresh data
+        const displayValue = value === "N/A" ? "" : value;
+
         if (f.type === 'textarea') {
-            inputHtml = `<textarea id="field-${f.key}" rows="3">${value}</textarea>`;
+            inputHtml = `<textarea id="field-${f.key}" rows="3" placeholder="N/A">${displayValue}</textarea>`;
         } else {
-            inputHtml = `<input type="${f.type}" id="field-${f.key}" value="${value}">`;
+            inputHtml = `<input type="${f.type}" id="field-${f.key}" value="${displayValue}" placeholder="N/A">`;
         }
 
         inputGroup.innerHTML = `
@@ -102,10 +126,6 @@ function renderUI(data) {
             </label>
             ${inputHtml}
         `;
-
-        if (isLowConfidence) {
-            inputGroup.querySelector('input, textarea')?.classList.add('low-confidence');
-        }
 
         formFields.appendChild(inputGroup);
     });
@@ -126,14 +146,14 @@ async function handleAction(action) {
     const inputs = document.querySelectorAll('[id^="field-"]');
     inputs.forEach(input => {
         const key = input.id.replace('field-', '');
-        fields[key] = input.value;
+        fields[key] = input.value || "N/A"; // Submit N/A if empty
     });
 
     const payload = {
         case_id: caseId,
         action: action,
         fields: fields,
-        paralegal_notes: document.getElementById('paralegal-notes').value
+        paralegal_notes: document.getElementById('paralegal-notes').value || "N/A"
     };
 
     try {

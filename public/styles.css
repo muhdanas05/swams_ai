@@ -238,8 +238,14 @@ td {
 .verification-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    height: calc(100vh - 120px);
+    gap: 1.5rem;
+    height: calc(100vh - 140px);
+    transition: var(--transition);
+}
+
+.verification-layout.show-pdf {
+    grid-template-columns: 1fr 1fr 1.5fr;
+    max-width: 100%;
 }
 
 .panel {

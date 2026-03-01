@@ -45,14 +45,14 @@
     </header>
 
     <main id="main-ui" class="main-content" style="margin-left: 0; padding-top: 1rem;">
-        <div class="verification-layout">
+        <div class="verification-layout" id="app-layout">
             <!-- Left Panel: Extracted Data (Read-only) -->
-            <div class="panel">
+            <div class="panel" id="data-panel">
                 <div class="panel-header">
                     <h3>AI Extracted Data</h3>
                     <div style="display: flex; gap: 8px;">
                         <button id="open-pdf-btn" class="badge badge-approved" style="cursor: pointer; display: none;"
-                            onclick="openPDF()">
+                            onclick="togglePDF()">
                             <i class="fas fa-file-pdf"></i> Open PDF Report
                         </button>
                         <span class="badge"
@@ -66,7 +66,7 @@
             </div>
 
             <!-- Right Panel: Editable Form -->
-            <div class="panel">
+            <div class="panel" id="form-panel">
                 <div class="panel-header">
                     <h3>Data Verification & Corrections</h3>
                     <span class="badge"
@@ -91,6 +91,19 @@
                     <button type="button" class="btn btn-approve" onclick="handleAction('approved')">
                         <i class="fas fa-check-circle"></i> Approve & Sync to Clio
                     </button>
+                </div>
+            </div>
+
+            <!-- PDF Viewer Panel (Hidden by default) -->
+            <div class="panel hidden" id="pdf-panel">
+                <div class="panel-header">
+                    <h3>Police Report Document</h3>
+                    <button class="badge badge-rejected" style="cursor: pointer;" onclick="togglePDF()">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+                <div class="panel-content" style="padding: 0; height: 100%;">
+                    <iframe id="pdf-iframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
                 </div>
             </div>
         </div>
