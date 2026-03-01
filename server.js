@@ -55,7 +55,7 @@ app.post('/webhook/new-case', upload.single('pdf'), (req, res) => {
         ...rawFields,
         case_id,
         pdf_url: pdfPath,
-        confidence_score: req.body.confidence_score || 85,
+        confidence_score: req.body.confidence_score || null,
         submitted: false,
         created_at: new Date().toISOString()
     };

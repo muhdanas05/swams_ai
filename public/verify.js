@@ -64,8 +64,17 @@ function togglePDF() {
 function renderUI(data) {
     // Set identifier display
     document.getElementById('matter-id-display').innerText = data.client_plate_number || data.case_id || "N/A";
-    document.getElementById('overall-confidence').innerText = `${data.confidence_score || 0}%`;
-    document.getElementById('confidence-badge-container').classList.remove('hidden');
+
+    // Confidence Logic: Only display if explicitly provided in body
+    const confidenceContainer = document.getElementById('confidence-badge-container');
+    const overallConfidence = document.getElementById('overall-confidence');
+
+    if (data.confidence_score !== undefined && data.confidence_score !== null) {
+        overallConfidence.innerText = `${data.confidence_score}%`;
+        confidenceContainer.classList.remove('hidden');
+    } else {
+        confidenceContainer.classList.add('hidden');
+    }
 
     const extractedView = document.getElementById('extracted-view');
     const formFields = document.getElementById('form-fields');
@@ -89,19 +98,18 @@ function renderUI(data) {
 
     fields.forEach(f => {
         let value = data[f.key];
-        // If it's undefined, null, or empty string, use "N/A"
-        if (value === undefined || value === null || value === "") {
-            value = "N/A";
-        }
+        // Clean value: if it's undefined, null, or effectively empty, use "N/A"
+        const isEmpty = (value === undefined || value === null || String(value).trim() === "");
+        const displayValue = isEmpty ? "N/A" : value;
 
-        const isLowConfidence = (data.confidence_score < 75);
+        const isLowConfidence = (data.confidence_score !== undefined && data.confidence_score < 75);
 
         // Render Read-only view
         const infoGroup = document.createElement('div');
         infoGroup.className = 'info-group';
         infoGroup.innerHTML = `
             <span class="info-label">${f.label}</span>
-            <div class="info-value">${value}</div>
+            <div class="info-value">${displayValue}</div>
         `;
         extractedView.appendChild(infoGroup);
 
@@ -110,19 +118,19 @@ function renderUI(data) {
         inputGroup.className = 'input-group';
 
         let inputHtml = '';
-        // For inputs, if value is "N/A", we leave it empty so the user can type fresh data
-        const displayValue = value === "N/A" ? "" : value;
+        // For inputs, if value is empty/NA, we leave it empty so the user can type fresh data
+        const inputValue = isEmpty ? "" : value;
 
         if (f.type === 'textarea') {
-            inputHtml = `<textarea id="field-${f.key}" rows="3" placeholder="N/A">${displayValue}</textarea>`;
+            inputHtml = `<textarea id="field-${f.key}" rows="3" placeholder="N/A">${inputValue}</textarea>`;
         } else {
-            inputHtml = `<input type="${f.type}" id="field-${f.key}" value="${displayValue}" placeholder="N/A">`;
+            inputHtml = `<input type="${f.type}" id="field-${f.key}" value="${inputValue}" placeholder="N/A">`;
         }
 
         inputGroup.innerHTML = `
             <label class="info-label">
                 ${f.label}
-                ${isLowConfidence ? '<span class="warning-icon"><i class="fas fa-exclamation-triangle"></i> Review</span>' : ''}
+                ${isLowConfidence ? '<span class="warning-icon" style="color:var(--warning); margin-left:8px;"><i class="fas fa-exclamation-triangle"></i></span>' : ''}
             </label>
             ${inputHtml}
         `;
@@ -146,14 +154,14 @@ async function handleAction(action) {
     const inputs = document.querySelectorAll('[id^="field-"]');
     inputs.forEach(input => {
         const key = input.id.replace('field-', '');
-        fields[key] = input.value || "N/A"; // Submit N/A if empty
+        fields[key] = input.value.trim() || "N/A";
     });
 
     const payload = {
         case_id: caseId,
         action: action,
         fields: fields,
-        paralegal_notes: document.getElementById('paralegal-notes').value || "N/A"
+        paralegal_notes: document.getElementById('paralegal-notes').value.trim() || "N/A"
     };
 
     try {
@@ -185,5 +193,4 @@ function showSuccess(action) {
     }
 }
 
-// Initial load
 loadCaseData();
