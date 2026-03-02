@@ -144,10 +144,10 @@ app.post('/api/upload-test', upload.single('pdf'), async (req, res) => {
 
             if (jobStatus === 'SUCCESS' || jobStatus === 'COMPLETED') {
                 completed = true;
-                if (statRes.data.markdown) {
-                    markdownText = statRes.data.markdown;
-                } else if (statRes.data.text) {
-                    markdownText = statRes.data.text;
+                if (statRes.data.markdown?.pages) {
+                    markdownText = statRes.data.markdown.pages.map(p => p.markdown || p.text).join("\n\n");
+                } else if (statRes.data.text?.pages) {
+                    markdownText = statRes.data.text.pages.map(p => p.text).join("\n\n");
                 } else {
                     markdownText = JSON.stringify(statRes.data);
                 }
@@ -188,7 +188,7 @@ Rules:
 - If a field cannot be found, use null
 - Return JSON only, nothing else`;
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`;
         const geminiRes = await axios.post(geminiUrl, {
             system_instruction: { parts: [{ text: systemPrompt }] },
             contents: [{ parts: [{ text: `Filename: ${req.file.originalname}\n\nReport Text:\n${markdownText}` }] }],
