@@ -96,8 +96,8 @@ function updateDashboard(cases, errorCount) {
     pendingCountEl.innerText = pending;
     approvalRateEl.innerText = total > 0 ? Math.round((approved / (total - pending || 1)) * 100) + '%' : '0%';
 
-    const timeSavedMins = approvedWithTime * 55;
-    speedToLeadEl.innerHTML = `${timeSavedMins}m <span style="font-size:0.6rem; color:var(--text-muted);">(est)</span>`;
+    const timeSavedHours = approvedWithTime;
+    speedToLeadEl.innerHTML = `${timeSavedHours}h <span style="font-size:0.6rem; color:var(--text-muted);">(est)</span>`;
 
     if (document.getElementById('error-logs-count')) {
         document.getElementById('error-logs-count').innerText = errorCount;
