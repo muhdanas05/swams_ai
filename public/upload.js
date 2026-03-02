@@ -43,6 +43,23 @@ submitBtn.addEventListener('click', async () => {
 
     loadingOverlay.classList.remove('hidden');
 
+    const loadingText = document.getElementById('loading-text');
+    loadingText.innerText = "Uploading file... Please wait.";
+
+    // Dynamic loading messages
+    const messages = [
+        "Analyzing document layout...",
+        "Extracting police report via LlamaParse...",
+        "Processing text with Gemini AI...",
+        "Structuring JSON output...",
+        "Almost done..."
+    ];
+    let msgIdx = 0;
+    const msgInterval = setInterval(() => {
+        loadingText.innerText = messages[msgIdx];
+        msgIdx = (msgIdx + 1) % messages.length;
+    }, 4000);
+
     const formData = new FormData();
     formData.append('pdf', fileInput.files[0]);
 
@@ -52,15 +69,21 @@ submitBtn.addEventListener('click', async () => {
             body: formData
         });
 
+        clearInterval(msgInterval);
+
         if (!response.ok) {
-            const err = await response.json();
+            const err = await response.json().catch(() => ({ error: 'Server timeout. Please try a smaller PDF or wait a moment.' }));
             throw new Error(err.error || "Upload failed");
         }
 
+        loadingText.innerText = "Extraction complete! Redirecting...";
+
         const data = await response.json();
-        // Redirect to verify form with local case ID
-        window.location.href = data.redirect;
+        setTimeout(() => {
+            window.location.href = data.redirect;
+        }, 800);
     } catch (error) {
+        clearInterval(msgInterval);
         alert("Processing Error: " + error.message);
         loadingOverlay.classList.add('hidden');
     }

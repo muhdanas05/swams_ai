@@ -113,8 +113,12 @@ app.post('/api/upload-test', upload.single('pdf'), async (req, res) => {
     try {
         if (!req.file) throw new Error("No PDF file provided.");
 
-        const LLAMAPARSE_KEY = 'llx-dSRGjVpuEPPeSopkGQsXEItNfv62QMcb8T4xufT2lSctsXJn';
-        const GEMINI_KEY = 'AIzaSyD1TbIb59cRpxKasbx_Nj-Mc7ftL5yuuFM';
+        const LLAMAPARSE_KEY = process.env.LLAMAPARSE_KEY;
+        const GEMINI_KEY = process.env.GEMINI_KEY;
+
+        if (!LLAMAPARSE_KEY || !GEMINI_KEY) {
+            throw new Error("API keys for AI extraction are not configured.");
+        }
 
         // 1. Upload to LlamaParse
         const fData = new FormData();
