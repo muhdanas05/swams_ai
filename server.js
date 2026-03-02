@@ -328,7 +328,7 @@ app.post('/api/verify', async (req, res) => {
             client_plate_number: caseData.client_name || fields.defendant_name || 'Testing',
             accident_date: fields.accident_date || 'N/A',
             confidence_score: caseData.confidence_score || 0,
-            status: action === 'approve' ? 'approved' : 'rejected',
+            status: (action === 'approved' || action === 'approve') ? 'approved' : 'rejected',
             created_at: caseData.created_at,
             approved_at: new Date().toISOString()
         });
