@@ -142,7 +142,7 @@ app.post('/api/upload-test', upload.single('pdf'), async (req, res) => {
 
             const jobStatus = statRes.data.status || statRes.data.job?.status;
 
-            if (jobStatus === 'SUCCESS') {
+            if (jobStatus === 'SUCCESS' || jobStatus === 'COMPLETED') {
                 completed = true;
                 if (statRes.data.markdown) {
                     markdownText = statRes.data.markdown;
