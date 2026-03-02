@@ -4,113 +4,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Law Firm Intake Dashboard - Swans</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Donezo - Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
-    <div class="sidebar">
+    <!-- Sidebar -->
+    <aside class="sidebar">
         <div class="sidebar-logo">
-            <i class="fas fa-gavel gold"></i>
-            <span>Richards & <span class="gold">Law</span></span>
+            <i class="fa-solid fa-leaf" style="color: var(--primary-green);"></i>
+            <span>Donezo</span>
         </div>
+
+        <div class="menu-section">MENU</div>
         <ul class="nav-links">
-            <li><a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="#"><i class="fas fa-folder"></i> All Cases</a></li>
-            <li><a href="#"><i class="fas fa-chart-line"></i> Analytics</a></li>
-            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="#" class="active"><i class="fas fa-th-large"></i> Dashboard</a></li>
+            <li><a href="#"><i class="fas fa-tasks"></i> Tasks <span
+                        style="margin-left:auto; background:var(--primary-green); color:white; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem;">12+</span></a>
+            </li>
+            <li><a href="#"><i class="far fa-calendar-alt"></i> Calendar</a></li>
+            <li><a href="#"><i class="fas fa-chart-bar"></i> Analytics</a></li>
+            <li><a href="#"><i class="fas fa-users"></i> Team</a></li>
         </ul>
-        <div class="sidebar-footer" style="position: absolute; bottom: 2rem; color: #636e72; font-size: 0.75rem;">
-            Powered by Swans AI
+
+        <div class="menu-section" style="margin-top: 2.5rem;">GENERAL</div>
+        <ul class="nav-links">
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="#"><i class="far fa-life-ring"></i> Help</a></li>
+            <li><a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+
+        <!-- Promo block matching design -->
+        <div
+            style="margin-top: auto; background: linear-gradient(135deg, #113622 0%, #175233 100%); color: white; padding: 16px; border-radius: 16px; text-align: left; position: relative;">
+            <i class="fa-brands fa-cloudsmith" style="font-size: 1.5rem; margin-bottom: 12px; opacity: 0.8;"></i>
+            <div style="font-size: 0.95rem; font-weight: 600; margin-bottom: 4px;">Download our Mobile App</div>
+            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.7);">Get easy in another way</div>
         </div>
-    </div>
+    </aside>
 
     <main class="main-content">
-        <header class="header">
-            <div>
-                <h1>Real-Time Intake Dashboard</h1>
-                <span class="date" id="current-date"></span>
+        <!-- Top Nav -->
+        <nav class="top-nav">
+            <div class="search-box">
+                <i class="fas fa-search" style="color:var(--text-gray)"></i>
+                <input type="text" placeholder="Search task">
+                <span class="shortcut">⌘F</span>
+            </div>
+            <div class="nav-profile">
+                <div class="icon-btn"><i class="far fa-envelope"></i></div>
+                <div class="icon-btn"><i class="far fa-bell"></i></div>
+                <div class="profile-info">
+                    <img src="https://i.pravatar.cc/150?img=11" alt="Profile" class="avatar">
+                    <div class="details">
+                        <span class="name">Totok Michael</span>
+                        <span class="email">tmichael20@mail.com</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="titles">
+                <h1>Dashboard</h1>
+                <p>Plan, prioritize, and accomplish your tasks with ease.</p>
             </div>
             <div class="header-actions">
-                <button class="badge badge-approved" style="padding: 10px 20px; cursor: pointer;"
-                    onclick="refreshDashboard()">
-                    <i class="fas fa-sync"></i> Refresh Data
-                </button>
+                <button class="btn btn-primary" onclick="refreshDashboard()"><i class="fas fa-sync"></i> Refresh
+                    Data</button>
+                <button class="btn btn-outline" onclick="refreshDashboard()">Import Data</button>
             </div>
         </header>
 
-        <section class="stats-grid">
+        <!-- Stats Grid (4 Cards) -->
+        <section class="stats-grid-4">
+            <!-- Card 1 -->
+            <div class="stat-card green-card">
+                <div class="card-title">Total Cases Processed</div>
+                <div class="card-value" id="total-cases">0</div>
+                <div class="card-trend"><i class="fas fa-arrow-up"></i> Increased from last month</div>
+                <div class="top-icon"><i class="fas fa-arrow-up" style="transform: rotate(45deg);"></i></div>
+            </div>
+            <!-- Card 2 -->
             <div class="stat-card">
-                <span class="stat-title">Total Cases Processed</span>
-                <span class="stat-value" id="total-cases">0</span>
-                <span class="stat-trend up"><i class="fas fa-arrow-up"></i> 12% vs last month</span>
+                <div class="card-title">Pending Verification</div>
+                <div class="card-value" id="pending-count">0</div>
+                <div class="card-trend"><i class="fas fa-arrow-up"></i> Action required</div>
+                <div class="top-icon"><i class="fas fa-arrow-up" style="transform: rotate(45deg);"></i></div>
             </div>
-            <div class="stat-card urgent">
-                <span class="stat-title">Pending Verification</span>
-                <span class="stat-value" id="pending-count">0</span>
-                <span class="stat-trend" style="color: var(--warning)">Requires immediate action</span>
-            </div>
+            <!-- Card 3 -->
             <div class="stat-card">
-                <span class="stat-title">Approval Rate</span>
-                <span class="stat-value" id="approval-rate">0%</span>
-                <span class="stat-trend" id="rejected-count">0 Rejected</span>
+                <div class="card-title">Approval Rate</div>
+                <div class="card-value" id="approval-rate">0%</div>
+                <div class="card-trend"><i class="fas fa-arrow-up"></i> Stable trend</div>
+                <div class="top-icon"><i class="fas fa-arrow-up" style="transform: rotate(45deg);"></i></div>
             </div>
+            <!-- Card 4 -->
             <div class="stat-card">
-                <span class="stat-title">Avg Confidence</span>
-                <span class="stat-value" id="avg-confidence">0%</span>
-                <span class="stat-trend" id="confidence-trend"><i class="fas fa-check-circle"></i> High Quality
-                    Extraction</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-title">Time Saved</span>
-                <span class="stat-value" id="speed-to-lead">0m <span
-                        style="font-size:0.6rem; color:var(--text-muted);">(est)</span></span>
-                <span class="stat-trend"><i class="fas fa-bolt"></i> Paralegal Hours Mapped</span>
-            </div>
-            <div class="stat-card urgent">
-                <span class="stat-title">SOL Risk Alerts</span>
-                <span class="stat-value" id="sol-risk-count">0</span>
-                <span class="stat-trend" style="color: var(--danger)"><i class="fas fa-exclamation-triangle"></i> Within
-                    90 days</span>
+                <div class="card-title">Time Saved</div>
+                <div class="card-value" id="speed-to-lead">0</div>
+                <div class="card-trend" style="background:transparent; padding:0; margin-top:12px;">Paralegal hours
+                </div>
+                <div class="top-icon"><i class="fas fa-bolt" style="color:var(--text-gray)"></i></div>
             </div>
         </section>
 
-        <section class="table-container">
-            <div class="table-header">
-                <h2>Live Intake Queue</h2>
-                <div class="search-bar">
-                    <input type="text" placeholder="Search by name or case ID..."
-                        style="padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd;">
+        <!-- Bottom Layout -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+            <!-- Live Queue (Full Width Replacement for Project Analytics/Collaboration depending on scale, but fitting it here perfectly replaces the charts/lists dynamically) -->
+            <div class="unified-widget"
+                style="grid-column: 1 / -1; height: 100%; overflow: hidden; display: flex; flex-direction: column;">
+                <div class="widget-header">
+                    <h3>Project (Live Intake Queue)</h3>
+                    <button class="btn-outline"
+                        style="border: 1px solid var(--border-color); padding: 6px 16px; border-radius: 20px; font-size:0.8rem; background:none; cursor:pointer;"><i
+                            class="fas fa-plus"></i> New</button>
+                </div>
+                <div style="flex: 1; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Case ID</th>
+                                <th>Accident Date</th>
+                                <th>Confidence</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cases-body">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            <table id="cases-table">
-                <thead>
-                    <tr>
-                        <th>Case ID</th>
-                        <th>Client Name</th>
-                        <th>Accident Date</th>
-                        <th>Confidence</th>
-                        <th>Status</th>
-                        <th>Created At</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="cases-body">
-                    <!-- Data injected via JS -->
-                </tbody>
-            </table>
-        </section>
+        </div>
     </main>
 
     <script src="dashboard.js"></script>
-    <script>
-        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    </script>
 </body>
 
 </html>

@@ -59,27 +59,30 @@ function updateDashboard(cases) {
         // Determine Action Button
         let actionColumn = '';
         if (c.status === 'pending') {
-            // Locally generated pending vs Form link from sheet
             const verifyUrl = c.form_link ? c.form_link : `/verify.html?id=${c.case_id}`;
-            actionColumn = `<a href="${verifyUrl}" class="badge badge-approved" style="text-decoration:none;">VERIFY</a>`;
+            actionColumn = `<a href="${verifyUrl}" class="action-btn verify-btn"><i class="fas fa-share" style="color:var(--pending); margin-right:4px;"></i> Open</a>`;
         } else {
-            actionColumn = `<span class="badge" style="background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border);">COMPLETED</span>`;
+            actionColumn = `<span class="action-btn" style="color:var(--text-gray); border:none; padding:4px;"><i class="fas fa-check"></i> Done</span>`;
         }
 
         // Add row to table
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>#${c.case_id.substring(0, 6)}</td>
-            <td><strong>${c.client_plate_number || 'Unknown'}</strong></td>
-            <td>${c.accident_date || 'N/A'}</td>
+            <td>
+                <div class="client-info">
+                    <div class="client-avatar">${(c.client_plate_number || 'U').charAt(0).toUpperCase()}</div>
+                    <div class="client-name">${c.client_plate_number || 'Unknown'}</div>
+                </div>
+            </td>
+            <td style="color: var(--text-gray); font-size: 0.85rem;">#${c.case_id.substring(0, 6)}</td>
+            <td class="date-text">${c.accident_date || 'N/A'}</td>
             <td>
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <progress value="${c.confidence_score}" max="100" style="width: 50px;"></progress>
-                    <span>${c.confidence_score}%</span>
+                    <div class="confidence-bar"><div class="confidence-fill" style="width: ${c.confidence_score}%;"></div></div>
+                    <span style="font-size:0.8rem; color:var(--text-gray);"><span style="color:var(--text-dark); font-weight:600;">${c.confidence_score}%</span></span>
                 </div>
             </td>
             <td><span class="badge badge-${c.status}">${c.status.toUpperCase()}</span></td>
-            <td>${new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
             <td>
                 ${actionColumn}
             </td>
