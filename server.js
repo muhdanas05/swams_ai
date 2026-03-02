@@ -129,13 +129,18 @@ app.get('/api/cases', async (req, res) => {
         const rawJson = await csvtojson().fromString(response.data);
 
         // Map Google Sheet columns to Dashboard expected keys
-        const mappedCases = rawJson.map(row => {
-            let status = row.status ? row.status.toLowerCase() : 'pending';
-            if (status === 'completed' || status === 'approved') status = 'approved';
-            else if (status === 'rejected') status = 'rejected';
-            else status = 'pending';
+        const mappedCases = [];
+        rawJson.forEach(row => {
+            let status = row.status ? row.status.trim().toLowerCase() : '';
+            if (status === 'completed' || status === 'approved') {
+                status = 'approved';
+            } else if (status === 'pending') {
+                status = 'pending';
+            } else {
+                return; // Only register exact matches
+            }
 
-            return {
+            mappedCases.push({
                 case_id: row.euuid || row.matter_id || Date.now().toString(),
                 client_plate_number: row.client_name || row.vehicle_info || 'Unknown',
                 accident_date: row.accident_date,
@@ -145,25 +150,25 @@ app.get('/api/cases', async (req, res) => {
                 approved_at: row.approved_at || null,
                 sol_date: row.sol_date || null,
                 form_link: row.form_link || null
-            };
+            });
         });
 
-        // Include pending cases still in the queue (not yet written to sheets)
-        const pendingLocal = Object.values(pendingVerifications)
-            .filter(pv => !pv.submitted)
-            .map(pv => ({
-                case_id: pv.case_id,
-                client_plate_number: pv.client_name || pv.defendant_name || pv.client_plate_number || 'TBD',
-                accident_date: pv.accident_date || 'N/A',
-                confidence_score: parseInt(pv.confidence_score) || 0,
-                status: 'pending',
-                created_at: pv.created_at || new Date().toISOString(),
-                approved_at: null,
-                sol_date: pv.statute_of_limitations_date || null
-            }));
+        // 2) Fetch the Error_Logs tab (Assume GID is 1152865223 based on standard practice or we'll aggregate just based on raw text if needed, but since we don't have exact GID, let's fetch by sheet name via a macro-fetch or alternative. Wait, GSheets export CSV requires GID. Since we don't know the exact GID for Error_Logs, we can try fetching the exact tab name using gviz/tq)
+        const errorUrl = 'https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/gviz/tq?tqx=out:csv&sheet=Error_Logs';
+        let errorCount = 0;
+        try {
+            const errorRes = await axios.get(errorUrl, { responseType: 'text' });
+            const errorJson = await csvtojson().fromString(errorRes.data);
+            errorCount = errorJson.length;
+        } catch (e) {
+            console.error("Could not fetch Error_Logs sheet:", e.message);
+        }
 
-        // Return combined list, with pending items at the top
-        res.json([...pendingLocal, ...mappedCases]);
+        // Return the exact filtered list from Google Sheets
+        res.json({
+            cases: mappedCases,
+            errorCount: errorCount
+        });
     } catch (err) {
         console.error("Error fetching Google Sheet:", err);
         res.status(500).json({ error: "Failed to fetch from Google Sheets" });

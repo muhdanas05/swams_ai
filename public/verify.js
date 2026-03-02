@@ -15,6 +15,12 @@ async function loadCaseData() {
         const response = await fetch(`/api/case/${caseId}`);
         if (!response.ok) {
             const err = await response.json();
+            if (err.error === "Invalid case or already submitted.") {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('main-ui').classList.add('hidden');
+                document.getElementById('already-submitted-screen').classList.remove('hidden');
+                return;
+            }
             showError(err.error || "Failed to load case");
             return;
         }

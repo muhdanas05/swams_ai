@@ -1,22 +1,20 @@
 async function fetchCases() {
     try {
         const response = await fetch('/api/cases');
-        const cases = await response.json();
-        updateDashboard(cases);
+        const data = await response.json();
+        updateDashboard(data.cases, data.errorCount || 0);
     } catch (error) {
         console.error('Error fetching cases:', error);
     }
 }
 
-function updateDashboard(cases) {
+function updateDashboard(cases, errorCount) {
     // Stats elements
     const totalCasesEl = document.getElementById('total-cases');
     const pendingCountEl = document.getElementById('pending-count');
     const approvalRateEl = document.getElementById('approval-rate');
-    const rejectedCountEl = document.getElementById('rejected-count');
-    const avgConfidenceEl = document.getElementById('avg-confidence');
     const speedToLeadEl = document.getElementById('speed-to-lead');
-    const solRiskCountEl = document.getElementById('sol-risk-count');
+    const errorCountEl = document.getElementById('error-logs-count') || { innerText: '' };
     const casesBody = document.getElementById('cases-body');
 
     // Reset table
@@ -59,8 +57,11 @@ function updateDashboard(cases) {
         // Determine Action Button
         let actionColumn = '';
         if (c.status === 'pending') {
-            const verifyUrl = c.form_link ? c.form_link : `/verify.html?id=${c.case_id}`;
-            actionColumn = `<a href="${verifyUrl}" class="action-btn verify-btn"><i class="fas fa-share" style="color:var(--pending); margin-right:4px;"></i> Open</a>`;
+            if (c.form_link) {
+                actionColumn = `<a href="${c.form_link}" class="action-btn verify-btn"><i class="fas fa-share" style="color:var(--pending); margin-right:4px;"></i> Open</a>`;
+            } else {
+                actionColumn = `<span class="action-btn" style="color:var(--text-gray); border:none; padding:4px;">No form link</span>`;
+            }
         } else {
             actionColumn = `<span class="action-btn" style="color:var(--text-gray); border:none; padding:4px;"><i class="fas fa-check"></i> Done</span>`;
         }
@@ -94,13 +95,13 @@ function updateDashboard(cases) {
     totalCasesEl.innerText = total;
     pendingCountEl.innerText = pending;
     approvalRateEl.innerText = total > 0 ? Math.round((approved / (total - pending || 1)) * 100) + '%' : '0%';
-    rejectedCountEl.innerText = `${rejected} Rejected`;
-    avgConfidenceEl.innerText = total > 0 ? Math.round(totalConfidence / total) + '%' : '0%';
 
     const timeSavedMins = approvedWithTime * 55;
     speedToLeadEl.innerHTML = `${timeSavedMins}m <span style="font-size:0.6rem; color:var(--text-muted);">(est)</span>`;
 
-    solRiskCountEl.innerText = solRisk;
+    if (document.getElementById('error-logs-count')) {
+        document.getElementById('error-logs-count').innerText = errorCount;
+    }
 
     // Pulse effect if pending count > 0
     if (pending > 0) {
