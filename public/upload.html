@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swans - Test Upload Interface</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <style>
+        .upload-container {
+            max-width: 600px;
+            margin: 4rem auto;
+            text-align: center;
+            background: var(--card-bg);
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 2px dashed var(--border);
+            transition: var(--transition);
+        }
+
+        .upload-container.drag-active {
+            border-color: var(--primary-green);
+            background: var(--primary-light);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: var(--primary-green);
+            margin-bottom: 1.5rem;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .instructions {
+            margin-top: 2rem;
+            text-align: left;
+            background: #F9FAFB;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(30, 102, 65, 0.2);
+            border-top-color: var(--primary-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="logo-container" onclick="window.location.href='/'" style="cursor: pointer;">
+            <div class="logo-icon">S</div>
+            <h1 style="font-size: 1.5rem; font-family: 'Outfit', sans-serif;">Swans <span style="color:var(--gold)">AI
+                    Test</span></h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-outline" onclick="window.location.href='/'">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </button>
+        </div>
+    </header>
+
+    <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="spinner"></div>
+        <p style="margin-top: 1rem; font-weight: 500; font-size: 1.1rem" id="loading-text">Extracting police report via
+            LlamaParse and Gemini...</p>
+    </div>
+
+    <main class="main-content">
+        <div class="upload-container animate__animated animate__fadeInUp" id="drop-zone">
+            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+            <h2 style="margin-bottom: 0.5rem; font-size: 1.5rem; color: var(--text);">Submit Police Report</h2>
+            <p style="color: var(--text-muted);">Test the AI ingestion engine</p>
+
+            <form id="upload-form" enctype="multipart/form-data">
+                <div class="file-input-wrapper">
+                    <button type="button" class="btn btn-approve" style="padding: 12px 24px; font-size: 1rem;">
+                        <i class="fas fa-file-pdf"></i> Select PDF File
+                    </button>
+                    <input type="file" name="pdf" id="pdf-input" accept="application/pdf" required>
+                </div>
+            </form>
+
+            <div id="selected-file" style="margin-top: 1rem; font-weight: bold; color: var(--text);"></div>
+
+            <button class="btn btn-approve" id="submit-btn" style="margin-top: 1.5rem; width: 100%; display: none;">
+                Process Document <i class="fas fa-arrow-right"></i>
+            </button>
+
+            <div class="instructions">
+                <strong><i class="fas fa-info-circle"></i> Testing Instructions:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li>Ensure the PDF filename matches the format: <code>FirstName_v_LastName.pdf</code></li>
+                    <li>The AI will automatically identify the <b>Client</b> (FirstName) and the <b>Defendant</b>
+                        (LastName) from the filename.</li>
+                    <li>On completion, you'll be redirected to the Verification Interface.</li>
+                    <li style="color: var(--warning);">These cases will appear on the dashboard but will <b>not</b> sync
+                        with Clio or Google Sheets.</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <script src="upload.js"></script>
+</body>
+
+</html>
