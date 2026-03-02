@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Law Firm Intake Dashboard - Swans</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="sidebar">
         <div class="sidebar-logo">
@@ -30,7 +32,8 @@
                 <span class="date" id="current-date"></span>
             </div>
             <div class="header-actions">
-                <button class="badge badge-approved" style="padding: 10px 20px; cursor: pointer;" onclick="refreshDashboard()">
+                <button class="badge badge-approved" style="padding: 10px 20px; cursor: pointer;"
+                    onclick="refreshDashboard()">
                     <i class="fas fa-sync"></i> Refresh Data
                 </button>
             </div>
@@ -55,17 +58,20 @@
             <div class="stat-card">
                 <span class="stat-title">Avg Confidence</span>
                 <span class="stat-value" id="avg-confidence">0%</span>
-                <span class="stat-trend" id="confidence-trend"><i class="fas fa-check-circle"></i> High Quality Extraction</span>
+                <span class="stat-trend" id="confidence-trend"><i class="fas fa-check-circle"></i> High Quality
+                    Extraction</span>
             </div>
             <div class="stat-card">
-                <span class="stat-title">Speed-to-Lead</span>
-                <span class="stat-value" id="speed-to-lead">0m</span>
-                <span class="stat-trend"><i class="fas fa-bolt"></i> Average turnaround</span>
+                <span class="stat-title">Time Saved</span>
+                <span class="stat-value" id="speed-to-lead">0m <span
+                        style="font-size:0.6rem; color:var(--text-muted);">(est)</span></span>
+                <span class="stat-trend"><i class="fas fa-bolt"></i> Paralegal Hours Mapped</span>
             </div>
             <div class="stat-card urgent">
                 <span class="stat-title">SOL Risk Alerts</span>
                 <span class="stat-value" id="sol-risk-count">0</span>
-                <span class="stat-trend" style="color: var(--danger)"><i class="fas fa-exclamation-triangle"></i> Within 90 days</span>
+                <span class="stat-trend" style="color: var(--danger)"><i class="fas fa-exclamation-triangle"></i> Within
+                    90 days</span>
             </div>
         </section>
 
@@ -73,7 +79,8 @@
             <div class="table-header">
                 <h2>Live Intake Queue</h2>
                 <div class="search-bar">
-                    <input type="text" placeholder="Search by name or case ID..." style="padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd;">
+                    <input type="text" placeholder="Search by name or case ID..."
+                        style="padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd;">
                 </div>
             </div>
             <table id="cases-table">
@@ -97,12 +104,13 @@
 
     <script src="dashboard.js"></script>
     <script>
-        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
         });
     </script>
 </body>
+
 </html>

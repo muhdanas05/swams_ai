@@ -143,7 +143,8 @@ app.get('/api/cases', async (req, res) => {
                 status: status,
                 created_at: row.created_at || new Date().toISOString(),
                 approved_at: row.approved_at || null,
-                sol_date: row.sol_date || null
+                sol_date: row.sol_date || null,
+                form_link: row.form_link || null
             };
         });
 

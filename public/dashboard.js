@@ -42,11 +42,9 @@ function updateDashboard(cases) {
 
         totalConfidence += c.confidence_score || 0;
 
-        // Speed to lead (created_at to approved_at)
-        if (c.status === 'approved' && c.created_at && c.approved_at) {
-            const start = new Date(c.created_at);
-            const end = new Date(c.approved_at);
-            totalSpeed += (end - start);
+        // Speed to lead (active/completed case saves 55 mins)
+        if (c.status === 'approved' || c.status === 'completed') {
+            totalSpeed += 55;
             approvedWithTime++;
         }
 
@@ -56,6 +54,16 @@ function updateDashboard(cases) {
             if (solDate - now < ninetyDays && solDate > now) {
                 solRisk++;
             }
+        }
+
+        // Determine Action Button
+        let actionColumn = '';
+        if (c.status === 'pending') {
+            // Locally generated pending vs Form link from sheet
+            const verifyUrl = c.form_link ? c.form_link : `/verify.html?id=${c.case_id}`;
+            actionColumn = `<a href="${verifyUrl}" class="badge badge-approved" style="text-decoration:none;">VERIFY</a>`;
+        } else {
+            actionColumn = `<span class="badge" style="background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border);">COMPLETED</span>`;
         }
 
         // Add row to table
@@ -73,10 +81,7 @@ function updateDashboard(cases) {
             <td><span class="badge badge-${c.status}">${c.status.toUpperCase()}</span></td>
             <td>${new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
             <td>
-                ${c.status === 'pending' ?
-                `<a href="/verify.html?id=${c.case_id}" class="badge badge-approved" style="text-decoration:none;">VERIFY</a>` :
-                `<button class="badge" disabled>VIEW</button>`
-            }
+                ${actionColumn}
             </td>
         `;
         casesBody.appendChild(row);
@@ -89,8 +94,8 @@ function updateDashboard(cases) {
     rejectedCountEl.innerText = `${rejected} Rejected`;
     avgConfidenceEl.innerText = total > 0 ? Math.round(totalConfidence / total) + '%' : '0%';
 
-    const avgSpeedMinutes = approvedWithTime > 0 ? Math.round((totalSpeed / approvedWithTime) / 60000) : 0;
-    speedToLeadEl.innerText = avgSpeedMinutes > 60 ? Math.round(avgSpeedMinutes / 60) + 'h' : avgSpeedMinutes + 'm';
+    const timeSavedMins = approvedWithTime * 55;
+    speedToLeadEl.innerHTML = `${timeSavedMins}m <span style="font-size:0.6rem; color:var(--text-muted);">(est)</span>`;
 
     solRiskCountEl.innerText = solRisk;
 
