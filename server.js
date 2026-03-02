@@ -140,17 +140,19 @@ app.post('/api/upload-test', upload.single('pdf'), async (req, res) => {
                 headers: { 'Authorization': `Bearer ${LLAMAPARSE_KEY}` }
             });
 
-            if (statRes.data.status === 'COMPLETED') {
+            const jobStatus = statRes.data.status || statRes.data.job?.status;
+
+            if (jobStatus === 'SUCCESS') {
                 completed = true;
-                if (statRes.data.markdown && statRes.data.markdown.pages) {
-                    markdownText = statRes.data.markdown.pages.map(p => p.text).join("\n\n");
+                if (statRes.data.markdown) {
+                    markdownText = statRes.data.markdown;
                 } else if (statRes.data.text) {
                     markdownText = statRes.data.text;
                 } else {
                     markdownText = JSON.stringify(statRes.data);
                 }
-            } else if (statRes.data.status === 'FAILED') {
-                throw new Error("LlamaParse job failed");
+            } else if (jobStatus === 'FAILED') {
+                throw new Error("LlamaParse job failed: " + (statRes.data.job?.error_message || "Unknown error"));
             }
         }
 
