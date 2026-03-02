@@ -189,14 +189,14 @@ async function handleAction(action) {
             alert(`Submission Error: ${data.error}`);
             isSubmitting = false;
             // Reset buttons
-            if (approveBtn) approveBtn.innerHTML = '<i class="fas fa-check-circle"></i> Approve & Sync to Clio';
+            if (approveBtn) approveBtn.innerHTML = '<i class="fas fa-check-circle"></i> Approve';
             if (rejectBtn) rejectBtn.style.pointerEvents = 'auto';
         }
     } catch (e) {
         console.error(e);
         alert(`Network Error: ${e.message}`);
         isSubmitting = false;
-        if (approveBtn) approveBtn.innerHTML = '<i class="fas fa-check-circle"></i> Approve & Sync to Clio';
+        if (approveBtn) approveBtn.innerHTML = '<i class="fas fa-check-circle"></i> Approve';
         if (rejectBtn) rejectBtn.style.pointerEvents = 'auto';
     }
 }
