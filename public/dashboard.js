@@ -12,7 +12,6 @@ function updateDashboard(cases, errorCount) {
     // Stats elements
     const totalCasesEl = document.getElementById('total-cases');
     const pendingCountEl = document.getElementById('pending-count');
-    const approvalRateEl = document.getElementById('approval-rate');
     const speedToLeadEl = document.getElementById('speed-to-lead');
     const errorCountEl = document.getElementById('error-logs-count') || { innerText: '' };
     const casesBody = document.getElementById('cases-body');
@@ -94,7 +93,6 @@ function updateDashboard(cases, errorCount) {
     // Update stats
     totalCasesEl.innerText = total;
     pendingCountEl.innerText = pending;
-    approvalRateEl.innerText = total > 0 ? Math.round((approved / (total - pending || 1)) * 100) + '%' : '0%';
 
     const timeSavedHours = approvedWithTime;
     speedToLeadEl.innerHTML = `${timeSavedHours}h <span style="font-size:0.6rem; color:var(--text-muted);">(est)</span>`;
