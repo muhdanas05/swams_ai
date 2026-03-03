@@ -400,7 +400,8 @@ tr:last-child td {
     text-transform: uppercase;
 }
 
-.badge-approved {
+.badge-approved,
+.badge-completed {
     background-color: #E8F5E9;
     color: var(--success);
 }

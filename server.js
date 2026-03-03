@@ -248,7 +248,7 @@ app.get('/api/cases', async (req, res) => {
         rawJson.forEach(row => {
             let status = row.status ? row.status.trim().toLowerCase() : '';
             if (status === 'completed' || status === 'approved') {
-                status = 'approved';
+                status = 'completed';
             } else if (status === 'pending') {
                 status = 'pending';
             } else {
@@ -329,7 +329,7 @@ app.post('/api/verify', async (req, res) => {
             client_plate_number: caseData.client_name || fields.defendant_name || 'Testing',
             accident_date: fields.accident_date || 'N/A',
             confidence_score: caseData.confidence_score || 0,
-            status: (action === 'approved' || action === 'approve') ? 'approved' : 'rejected',
+            status: (action === 'approved' || action === 'approve') ? 'completed' : 'rejected',
             created_at: caseData.created_at,
             approved_at: new Date().toISOString()
         });

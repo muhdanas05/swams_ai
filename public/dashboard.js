@@ -38,7 +38,7 @@ function updateDashboard(cases, errorCount) {
 
     cases.forEach(c => {
         if (c.status === 'pending') pending++;
-        if (c.status === 'approved') approved++;
+        if (c.status === 'approved' || c.status === 'completed') approved++;
         if (c.status === 'rejected') rejected++;
 
         totalConfidence += c.confidence_score || 0;
