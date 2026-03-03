@@ -1,0 +1,2075 @@
+{
+  "name": "Response Handler - Final",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://app.clio.com/api/v4/custom_fields.json?fields=id,name",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "id": "226f0ef8-39da-4afa-8ec7-b7bcd584c5ce",
+      "name": "Get Custom Field Names",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        912,
+        496
+      ],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "ZyLuEy18Qhp6Wt79",
+          "name": "Clio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://app.clio.com/api/v4/matters/{{ $('Get Matter ID').item.json.data[0].id }}.json?fields=id,custom_field_values{id,value,custom_field}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "id": "d4cbd631-9cd1-4078-bfa8-1d6cfe9fb0e4",
+      "name": "Get Matter Field Value IDs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1136,
+        496
+      ],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "ZyLuEy18Qhp6Wt79",
+          "name": "Clio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const customFields = $('Get Custom Field Names').first().json.data;\nconst matterFields = $('Get Matter Field Value IDs').first().json.data.custom_field_values;\n\n// Build a map of custom_field id -> name\nconst nameMap = {};\nfor (const field of customFields) {\n  nameMap[field.id] = field.name;\n}\n\n// Build output mapping\nconst result = {};\nfor (const val of matterFields) {\n  const cfId = val.custom_field.id;\n  const name = nameMap[cfId] || `unknown_${cfId}`;\n  result[name] = {\n    custom_field_value_id: val.id,\n    custom_field_id: cfId,\n    current_value: val.value\n  };\n}\n\nreturn [{ json: result }];"
+      },
+      "id": "15860736-1dc1-45f5-bda1-b7c10879b218",
+      "name": "Map Names to Value IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://app.clio.com/api/v4/matters.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "client_id",
+              "value": "={{ $('Get Contact ID').item.json.data[0].id }}"
+            },
+            {
+              "name": "fields",
+              "value": "id,display_number,description"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        464,
+        496
+      ],
+      "id": "deb96c2a-f2bf-49fc-b263-c0e350328326",
+      "name": "Get Matter ID",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "ZyLuEy18Qhp6Wt79",
+          "name": "Clio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://app.clio.com/api/v4/matters/{{ $('Get Matter ID').item.json.data[0].id }}.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": {\n    \"custom_field_values\": [\n      { \"id\": \"{{ $('Map Names to Value IDs').first().json.Accident_Date.custom_field_value_id }}\", \"custom_field\": { \"id\": {{ $('Map Names to Value IDs').first().json.Accident_Date.custom_field_id }} }, \"value\": \"{{ $('Get all the approved variables').first().json.accident_date }}\" },\n      { \"id\": \"{{ $('Map Names to Value IDs').first().json.Statute_of_Limitations_Date.custom_field_value_id }}\", \"custom_field\": { \"id\": {{ $('Map Names to Value IDs').first().json.Statute_of_Limitations_Date.custom_field_id }} }, \"value\": \"{{ $('Get all the approved variables').first().json.statute_of_limitations_date }}\" },\n      { \"id\": \"{{ $('Map Names to Value IDs').first().json.Accident_Description.custom_field_value_id }}\", \"custom_field\": { \"id\": {{ $('Map Names to Value IDs').first().json.Accident_Description.custom_field_id }} }, \"value\": \"{{ $('Get all the approved variables').first().json.accident_description }}\" },\n      { \"id\": \"{{ $('Map Names to Value IDs').first().json.Accident_Location.custom_field_value_id }}\", \"custom_field\": { \"id\": {{ $('Map Names to Value IDs').first().json.Accident_Location.custom_field_id }} }, \"value\": \"{{ $('Get all the approved variables').first().json.accident_location }}\" },\n      { \"id\": \"{{ $('Map Names to Value IDs').first().json.Client_Plate_Number.custom_field_value_id }}\", \"custom_field\": { \"id\": {{ $('Map Names to Value IDs').first().json.Client_Plate_Number.custom_field_id }} }, \"value\": \"{{ $('Get all the approved variables').first().json.client_plate_number }}\" },\n      { \"id\": \"{{ $('Map Names to Value IDs').first().json['Client_Vehicle_Year_&_Make'].custom_field_value_id }}\", \"custom_field\": { \"id\": {{ $('Map Names to Value IDs').first().json['Client_Vehicle_Year_&_Make'].custom_field_id }} }, \"value\": \"{{ $('Get all the approved variables').first().json.client_vehicle_year_and_make }}\" },\n      { \"id\": \"{{ $('Map Names to Value IDs').first().json['Defendant _Name'].custom_field_value_id }}\", \"custom_field\": { \"id\": {{ $('Map Names to Value IDs').first().json['Defendant _Name'].custom_field_id }} }, \"value\": \"{{ $('Get all the approved variables').first().json.defendant_name }}\" },\n      { \"id\": \"{{ $('Map Names to Value IDs').first().json.Client_Gender.custom_field_value_id }}\", \"custom_field\": { \"id\": {{ $('Map Names to Value IDs').first().json.Client_Gender.custom_field_id }} }, \"value\": \"{{ $('Get all the approved variables').first().json.client_gender }}\" },\n      { \"id\": \"{{ $('Map Names to Value IDs').first().json.Number_of_injured.custom_field_value_id }}\", \"custom_field\": { \"id\": {{ $('Map Names to Value IDs').first().json.Number_of_injured.custom_field_id }} }, \"value\": {{ $('Get all the approved variables').first().json.number_of_injured }} },\n\n{ \"id\": \"{{ $('Map Names to Value IDs').item.json.pronoun_his_her.custom_field_value_id }}\", \"custom_field\": { \"id\": {{ $('Map Names to Value IDs').item.json.pronoun_his_her.custom_field_id }}}, \"value\": \"{{ $('Injury Para & Pronouns').item.json.pronoun_his_her }}\" },\n\n{ \"id\": \"{{ $('Map Names to Value IDs').item.json.pronoun_he_she.custom_field_value_id }}\", \"custom_field\": { \"id\": {{ $('Map Names to Value IDs').item.json.pronoun_he_she.custom_field_id }} }, \"value\":  \"{{ $('Injury Para & Pronouns').item.json.pronoun_he_she }}\"},\n\n{ \"id\": \"{{ $('Map Names to Value IDs').item.json.Injury_Paragraph.custom_field_value_id }}\", \"custom_field\": { \"id\": {{ $('Injury Para & Pronouns').item.json.Injury_Paragraph.custom_field_id }}}, \"value\": \"{{ $json.injury_paragraph }}\"}\n\n    ]\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1824,
+        496
+      ],
+      "id": "10d4adbe-6953-46cf-bfac-f5318bce0761",
+      "name": "Update Clio records",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "ZyLuEy18Qhp6Wt79",
+          "name": "Clio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://app.clio.com/api/v4/document_automations.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": {\n    \"matter\": {\n      \"id\": {{ $('Get Matter ID').item.json.data[0].id }}\n    },\n    \"document_template\": {\n      \"id\": 10221635\n    },\n    \"filename\": \"Retainer_Agreement\",\n    \"formats\": [\n      \"original\"\n    ]\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2256,
+        496
+      ],
+      "id": "a2387494-fe77-4648-a1ff-081e0be21ea1",
+      "name": "Create a document Automation",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "ZyLuEy18Qhp6Wt79",
+          "name": "Clio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const gender = $('Get all the approved variables').first().json.client_gender;\nconst injured = $('Get all the approved variables').first().json.number_of_injured;\n\nreturn {\n  ...$json,\n  pronoun_his_her: gender === \"Male\" ? \"his\" : \"her\",\n  pronoun_he_she: gender === \"Male\" ? \"he\" : \"she\",\n  injury_paragraph: injured > 0\n    ? \"Additionally, since the motor vehicle accident involved an injured person, Attorney will also investigate potential bodily injury claims and review relevant medical records to substantiate non-economic damages.\"\n    : \"However, since the motor vehicle accident involved no reported injured people, the scope of this engagement is strictly limited to the recovery of property damage and loss of use.\"\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1584,
+        496
+      ],
+      "id": "ab8ed27c-6ada-41b6-b0d6-0f12a72dcf13",
+      "name": "Injury Para & Pronouns"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hit",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -656,
+        592
+      ],
+      "id": "7042d246-291f-4990-94e4-9605f91e2870",
+      "name": "Recieves form ",
+      "webhookId": "3ff25a49-c30b-4632-8493-0c2480d10db1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e3c1281a-ee25-4f53-929f-f3f37f6d0212",
+              "leftValue": "={{ $json.body.action }}",
+              "rightValue": "approved",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -432,
+        592
+      ],
+      "id": "bfa6a02a-39bf-4aba-9555-5240ba4b296d",
+      "name": "Approved?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7d9a2455-973e-4c52-902b-4ecbd92f1846",
+              "name": "accident_date",
+              "value": "={{ $json.body.fields.accident_date }}",
+              "type": "string"
+            },
+            {
+              "id": "d7a39f46-9b25-48c2-b943-e33d23236f07",
+              "name": "accident_location",
+              "value": "={{ $json.body.fields.accident_location }}",
+              "type": "string"
+            },
+            {
+              "id": "58a4698c-bc88-4a26-b778-63e512eaba69",
+              "name": "defendant_name",
+              "value": "={{ $json.body.fields.defendant_name }}",
+              "type": "string"
+            },
+            {
+              "id": "10a01e15-51fb-4adc-ade9-d404d292c48d",
+              "name": "client_plate_number",
+              "value": "={{ $json.body.fields.client_plate_number }}",
+              "type": "string"
+            },
+            {
+              "id": "b90198bf-2ed5-47df-8a28-77c8bbd94a2e",
+              "name": "client_vehicle_year_and_make",
+              "value": "={{ $json.body.fields.client_vehicle_year_and_make }}",
+              "type": "string"
+            },
+            {
+              "id": "8c2c24f9-a31b-4664-8057-9ec3491335d8",
+              "name": "client_gender",
+              "value": "={{ $json.body.fields.client_gender }}",
+              "type": "string"
+            },
+            {
+              "id": "5266bcd2-7d93-4773-944b-1cff0eebe000",
+              "name": "number_of_injured",
+              "value": "={{ $json.body.fields.number_of_injured }}",
+              "type": "string"
+            },
+            {
+              "id": "a2b52375-cad7-411b-abf5-7093a9e888e2",
+              "name": "statute_of_limitations_date",
+              "value": "={{ $json.body.fields.statute_of_limitations_date }}",
+              "type": "string"
+            },
+            {
+              "id": "56be7b5a-4b08-47d5-bb6e-165dcf003d5b",
+              "name": "confidence_score",
+              "value": "={{ $json.body.fields.confidence_score }}",
+              "type": "number"
+            },
+            {
+              "id": "363a6d79-90ad-404d-bf9d-d0ada4ee8da6",
+              "name": "matter_id",
+              "value": "={{ $json.body.fields.matter_id }}",
+              "type": "number"
+            },
+            {
+              "id": "626bfee8-ea2f-4519-9ada-aa8f1837fc7e",
+              "name": "template_id",
+              "value": "={{ $json.body.fields.template_id }}",
+              "type": "number"
+            },
+            {
+              "id": "b70c0e56-bec6-4e3d-957c-a1800cdb5199",
+              "name": "email_uuid",
+              "value": "={{ $json.body.fields.email_uuid }}",
+              "type": "string"
+            },
+            {
+              "id": "102fa674-e53f-41db-b6a0-7d8fd7625bf7",
+              "name": "accident_description",
+              "value": "={{ $json.body.fields.accident_description }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -208,
+        496
+      ],
+      "id": "0f3e5a6f-6767-476f-a0dd-49a5e1aebcc3",
+      "name": "Get all the approved variables"
+    },
+    {
+      "parameters": {
+        "url": "=https://app.clio.com/api/v4/contacts.json?query=talent.legal-engineer.hackathon.automation-email@swans.co\"&fields=id,name,matters",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,name"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        16,
+        496
+      ],
+      "id": "cc44bb17-0c22-48af-85d4-1f72711a1c92",
+      "name": "Get Contact ID",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "ZyLuEy18Qhp6Wt79",
+          "name": "Clio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA",
+          "mode": "list",
+          "cachedResultName": "KPIs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 270289194,
+          "mode": "list",
+          "cachedResultName": "intake_cases",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit#gid=270289194"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "matter_id": "={{ $('Get all the approved variables').first().json.matter_id }}",
+            "defendant_name": "={{ $('Get all the approved variables').first().json.defendant_name }}",
+            "accident_date": "={{ $('Get all the approved variables').first().json.accident_date }}",
+            "location": "={{ $('Get all the approved variables').first().json.accident_location }}",
+            "accident_description": "={{ $('Get all the approved variables').first().json.accident_description }}",
+            "client_gender": "={{ $('Get all the approved variables').first().json.client_gender }}",
+            "approved_at": "={{ $now.toLocal()}}",
+            "template_id": "={{ $('Get all the approved variables').first().json.template_id }}",
+            "injuries": "={{ $('Get all the approved variables').first().json.number_of_injured }}",
+            "confidence_score": "={{ $('Get all the approved variables').first().json.confidence_score }}",
+            "status": "Response Recieved and Approved",
+            "sol_date": "={{ $('Get all the approved variables').first().json.statute_of_limitations_date }}",
+            "vehicle_info": "={{ $('Get all the approved variables').first().json.client_vehicle_year_and_make }}",
+            "client_name": "={{ $json.data[0].name }}",
+            "row_number": 0,
+            "paralegal_notes": "={{ $('Recieves form ').item.json.body.paralegal_notes }}",
+            "euuid": "={{ $('Get all the approved variables').item.json.email_uuid }}",
+            "action": "approved"
+          },
+          "matchingColumns": [
+            "euuid"
+          ],
+          "schema": [
+            {
+              "id": "euuid",
+              "displayName": "euuid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_name",
+              "displayName": "client_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "accident_date",
+              "displayName": "accident_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "defendant_name",
+              "displayName": "defendant_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "accident_description",
+              "displayName": "accident_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "vehicle_info",
+              "displayName": "vehicle_info",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "injuries",
+              "displayName": "injuries",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "confidence_score",
+              "displayName": "confidence_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "paralegal_notes",
+              "displayName": "paralegal_notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "matter_id",
+              "displayName": "matter_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sol_date",
+              "displayName": "sol_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "template_id",
+              "displayName": "template_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "client_gender",
+              "displayName": "client_gender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "form_link",
+              "displayName": "form_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        240,
+        496
+      ],
+      "id": "3f9ad45b-cd6a-4efc-9edc-d82baab65e4d",
+      "name": "Update with all the approved variables",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Tj2xi5A0N2Jl6VC7",
+          "name": "Anas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://app.clio.com/api/v4/calendar_entries.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": {\n    \"summary\": \"Statute of Limitations - {{ $('Get Contact ID').item.json.data[0].name }}\",\n    \"description\": \"Statute of Limitations deadline - 8 years from accident date\",\n    \"start_at\": \"{{ $('Get all the approved variables').item.json.statute_of_limitations_date }}T00:00:00Z\",\n    \"end_at\": \"{{ $('Get all the approved variables').item.json.statute_of_limitations_date }}T01:00:00Z\",\n    \"all_day\": true,\n    \"calendar_owner\": {\n      \"id\": 10143365\n    },\n    \"matter\": {\n      \"id\": {{ $json.data[0].id }}\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        688,
+        496
+      ],
+      "id": "61cfe3d1-c1c4-435a-a53a-707bfefff42d",
+      "name": "Do a calender entry",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "ZyLuEy18Qhp6Wt79",
+          "name": "Clio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Remove Duplicates').first().json.email_id }}",
+        "subject": "=Your Retainer Agreement from Richards & Law – {{ $('Update with all the approved variables').item.json.accident_date }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body {\n      font-family: Georgia, 'Times New Roman', serif;\n      background-color: #f4f4f4;\n      margin: 0;\n      padding: 0;\n    }\n    .wrapper {\n      max-width: 620px;\n      margin: 40px auto;\n      background-color: #ffffff;\n      border-top: 4px solid #1a1a2e;\n      border-radius: 4px;\n      overflow: hidden;\n    }\n    .header {\n      background-color: #1a1a2e;\n      padding: 32px 40px;\n      text-align: center;\n    }\n    .header h1 {\n      color: #ffffff;\n      font-size: 22px;\n      letter-spacing: 2px;\n      margin: 0;\n      font-weight: normal;\n      text-transform: uppercase;\n    }\n    .header p {\n      color: #aaaacc;\n      font-size: 12px;\n      margin: 6px 0 0;\n      letter-spacing: 1px;\n    }\n    .body {\n      padding: 40px 40px 32px;\n      color: #2c2c2c;\n      font-size: 15px;\n      line-height: 1.8;\n    }\n    .body p {\n      margin: 0 0 18px;\n    }\n    .highlight-box {\n      background-color: #f0f4ff;\n      border-left: 4px solid #1a1a2e;\n      padding: 16px 20px;\n      margin: 24px 0;\n      font-size: 14px;\n      color: #2c2c2c;\n      border-radius: 2px;\n    }\n    .highlight-box strong {\n      display: block;\n      margin-bottom: 6px;\n      color: #1a1a2e;\n      font-size: 13px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n    }\n    .cta-button {\n      display: block;\n      width: fit-content;\n      margin: 28px auto;\n      background-color: #1a1a2e;\n      color: #ffffff !important;\n      text-decoration: none;\n      padding: 14px 36px;\n      border-radius: 3px;\n      font-size: 14px;\n      letter-spacing: 1px;\n      text-transform: uppercase;\n      font-family: Arial, sans-serif;\n    }\n    .attachment-note {\n      font-size: 13px;\n      color: #666;\n      text-align: center;\n      margin: 0 0 28px;\n    }\n    .attachment-note span {\n      background: #f5f5f5;\n      border: 1px solid #ddd;\n      padding: 4px 10px;\n      border-radius: 3px;\n      font-family: monospace;\n    }\n    .footer {\n      background-color: #f9f9f9;\n      border-top: 1px solid #e8e8e8;\n      padding: 24px 40px;\n      font-size: 13px;\n      color: #666;\n      line-height: 1.6;\n    }\n    .footer strong {\n      color: #1a1a2e;\n      font-size: 14px;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n\n    <div class=\"header\">\n      <h1>Richards &amp; Law</h1>\n      <p>Personal Injury Attorneys &mdash; New York</p>\n    </div>\n\n    <div class=\"body\">\n      <p>Dear {{ $('Update with all the approved variables').item.json.client_name }},</p>\n\n      <p>Thank you for reaching out to <strong>Richards &amp; Law</strong>. We have reviewed the details surrounding your case and want you to know that our team is ready to stand by your side every step of the way.</p>\n\n      <div class=\"highlight-box\">\n        <strong>Incident Summary</strong>\n        On <strong>{{ $('Update with all the approved variables').item.json.accident_date }}</strong>, an incident occurred at <strong>{{ $('Update with all the approved variables').item.json.location }}.</strong>\n{{ $('Update with all the approved variables').item.json.accident_description }}\n      </div>\n\n      <p>We have prepared your <strong>Retainer Agreement</strong> and attached it to this email as a PDF. Please take a moment to review it before our consultation there is no obligation until you sign.</p>\n\n      <p>To book your consultation, simply click the button below:</p>\n\n      <a href=\"{{ $('Get Booking Link').item.json.bookingLink }}\" class=\"cta-button\">Schedule Your Consultation</a>\n\n      <p class=\"attachment-note\">📎 Attached: <span>Retainer_Agreement.pdf</span></p>\n\n      <p>If you have any questions in the meantime, do not hesitate to reply to this email or call our office directly. We are here for you.</p>\n\n      <p>Warm regards,</p>\n    </div>\n\n    <div class=\"footer\">\n      <strong>Andrew Richards</strong><br>\n      Richards &amp; Law — Personal Injury Attorneys<br>\n      New York, NY<br>\n    </div>\n\n  </div>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4064,
+        496
+      ],
+      "id": "dc1c1560-d274-4488-9523-3a34f5da13b9",
+      "name": "Send a message",
+      "webhookId": "1dfae24d-02ac-434b-a7f3-a035afc0f82a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7kOqVS5XI29WQoTH",
+          "name": "Anas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://app.clio.com/api/v4/documents.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "matter_id",
+              "value": "={{ $('Get Matter ID').item.json.data[0].id }}"
+            },
+            {
+              "name": "fields",
+              "value": "id,name,created_at"
+            },
+            {
+              "name": "order",
+              "value": "created_at(desc)"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2704,
+        416
+      ],
+      "id": "01393b4d-8d67-48c9-9ce6-958aa9ada752",
+      "name": "Create Download Link",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "ZyLuEy18Qhp6Wt79",
+          "name": "Clio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://app.clio.com/api/v4/documents/{{ $('Create Download Link').item.json.data[0].id }}/download.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3824,
+        496
+      ],
+      "id": "efdcd6e7-a4e6-4611-99ab-fff1449cff74",
+      "name": "Download Attachment",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "ZyLuEy18Qhp6Wt79",
+          "name": "Clio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date().toLocaleString(\"en-US\", { timeZone: \"America/New_York\" });\nconst month = new Date(now).getMonth() + 1; // 1-12\n\nconst bookingLink = (month >= 3 && month <= 8)\n  ? \"https://calendly.com/swans-santiago-p/summer-spring\"\n  : \"https://calendly.com/swans-santiago-p/winter-autumn\";\n\nreturn [{ json: { bookingLink } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2032,
+        496
+      ],
+      "id": "e5a8d94f-b44a-4aeb-82a2-968a512363f6",
+      "name": "Get Booking Link"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2480,
+        496
+      ],
+      "id": "f561593a-c615-42e7-9559-13388404cf7e",
+      "name": "Wait",
+      "webhookId": "059e8f5c-ef30-4a63-83f3-2c36f98ba635"
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "email_id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        3600,
+        496
+      ],
+      "id": "b0612390-9b4e-4065-87a7-3f0487bc40d8",
+      "name": "Remove Duplicates"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA",
+          "mode": "list",
+          "cachedResultName": "KPIs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 270289194,
+          "mode": "list",
+          "cachedResultName": "intake_cases",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit#gid=270289194"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "matter_id": "={{ $('Get Matter ID').first().json.data[0].id }}",
+            "status": "Completed",
+            "row_number": 0,
+            "euuid": "={{ $('Get all the approved variables').item.json.email_uuid }}"
+          },
+          "matchingColumns": [
+            "euuid"
+          ],
+          "schema": [
+            {
+              "id": "euuid",
+              "displayName": "euuid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_name",
+              "displayName": "client_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "accident_date",
+              "displayName": "accident_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "defendant_name",
+              "displayName": "defendant_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "accident_description",
+              "displayName": "accident_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vehicle_info",
+              "displayName": "vehicle_info",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "injuries",
+              "displayName": "injuries",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "confidence_score",
+              "displayName": "confidence_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "paralegal_notes",
+              "displayName": "paralegal_notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "matter_id",
+              "displayName": "matter_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sol_date",
+              "displayName": "sol_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "template_id",
+              "displayName": "template_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "client_gender",
+              "displayName": "client_gender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "form_link",
+              "displayName": "form_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4960,
+        880
+      ],
+      "id": "47b5b57b-5696-417f-985a-60fac6ea5c23",
+      "name": "Update row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Tj2xi5A0N2Jl6VC7",
+          "name": "Anas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Remove Duplicates').first().json.email_id }}",
+        "subject": "=Your Retainer Agreement from Richards & Law – {{ $('Update with all the approved variables').item.json.accident_date }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body {\n      font-family: Georgia, 'Times New Roman', serif;\n      background-color: #f4f4f4;\n      margin: 0;\n      padding: 0;\n    }\n    .wrapper {\n      max-width: 620px;\n      margin: 40px auto;\n      background-color: #ffffff;\n      border-top: 4px solid #1a1a2e;\n      border-radius: 4px;\n      overflow: hidden;\n    }\n    .header {\n      background-color: #1a1a2e;\n      padding: 32px 40px;\n      text-align: center;\n    }\n    .header h1 {\n      color: #ffffff;\n      font-size: 22px;\n      letter-spacing: 2px;\n      margin: 0;\n      font-weight: normal;\n      text-transform: uppercase;\n    }\n    .header p {\n      color: #aaaacc;\n      font-size: 12px;\n      margin: 6px 0 0;\n      letter-spacing: 1px;\n    }\n    .body {\n      padding: 40px 40px 32px;\n      color: #2c2c2c;\n      font-size: 15px;\n      line-height: 1.8;\n    }\n    .body p {\n      margin: 0 0 18px;\n    }\n    .highlight-box {\n      background-color: #f0f4ff;\n      border-left: 4px solid #1a1a2e;\n      padding: 16px 20px;\n      margin: 24px 0;\n      font-size: 14px;\n      color: #2c2c2c;\n      border-radius: 2px;\n    }\n    .highlight-box strong {\n      display: block;\n      margin-bottom: 6px;\n      color: #1a1a2e;\n      font-size: 13px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n    }\n    .cta-button {\n      display: block;\n      width: fit-content;\n      margin: 28px auto;\n      background-color: #1a1a2e;\n      color: #ffffff !important;\n      text-decoration: none;\n      padding: 14px 36px;\n      border-radius: 3px;\n      font-size: 14px;\n      letter-spacing: 1px;\n      text-transform: uppercase;\n      font-family: Arial, sans-serif;\n    }\n    .attachment-note {\n      font-size: 13px;\n      color: #666;\n      text-align: center;\n      margin: 0 0 28px;\n    }\n    .attachment-note span {\n      background: #f5f5f5;\n      border: 1px solid #ddd;\n      padding: 4px 10px;\n      border-radius: 3px;\n      font-family: monospace;\n    }\n    .footer {\n      background-color: #f9f9f9;\n      border-top: 1px solid #e8e8e8;\n      padding: 24px 40px;\n      font-size: 13px;\n      color: #666;\n      line-height: 1.6;\n    }\n    .footer strong {\n      color: #1a1a2e;\n      font-size: 14px;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n\n    <div class=\"header\">\n      <h1>Richards &amp; Law</h1>\n      <p>Personal Injury Attorneys &mdash; New York</p>\n    </div>\n\n    <div class=\"body\">\n      <p>Dear {{ $('Update with all the approved variables').item.json.client_name }},</p>\n\n      <p>Thank you for reaching out to <strong>Richards &amp; Law</strong>. We have reviewed the details surrounding your case and want you to know that our team is ready to stand by your side every step of the way.</p>\n\n      <div class=\"highlight-box\">\n        <strong>Incident Summary</strong>\n        On <strong>{{ $('Update with all the approved variables').item.json.accident_date }}</strong>, an incident occurred at <strong>{{ $('Update with all the approved variables').item.json.location }}.</strong>\n{{ $('Update with all the approved variables').item.json.accident_description }}\n      </div>\n\n      <p>We have prepared your <strong>Retainer Agreement</strong> and attached it to this email as a PDF. Please take a moment to review it before our consultation there is no obligation until you sign.</p>\n\n      <p>To book your consultation, simply click the button below:</p>\n\n      <a href=\"{{ $('Get Booking Link').item.json.bookingLink }}\" class=\"cta-button\">Schedule Your Consultation</a>\n\n      <p class=\"attachment-note\">📎 Attached: <span>Retainer_Agreement.pdf</span></p>\n\n      <p>If you have any questions in the meantime, do not hesitate to reply to this email or call our office directly. We are here for you.</p>\n\n      <p>Warm regards,</p>\n    </div>\n\n    <div class=\"footer\">\n      <strong>Andrew Richards</strong><br>\n      Richards &amp; Law — Personal Injury Attorneys<br>\n      New York, NY<br>\n    </div>\n\n  </div>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4752,
+        880
+      ],
+      "id": "13cead80-93b2-431e-b0f9-b7ce310570ad",
+      "name": "Send a message1",
+      "webhookId": "1dfae24d-02ac-434b-a7f3-a035afc0f82a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7kOqVS5XI29WQoTH",
+          "name": "Anas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://app.clio.com/api/v4/documents/21065107625/download.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4512,
+        880
+      ],
+      "id": "cafd8cfe-6cc5-4af4-8597-d55f3a2fe178",
+      "name": "Download Attachment1",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "ZyLuEy18Qhp6Wt79",
+          "name": "Clio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 📋 Workflow Overview\n\n**📥 Webhook Entry Point**\nParalegal dashboard sends a POST request here with all extracted case fields. The Approved? node then routes the flow — approved submissions continue through the automation, rejected ones are logged in Google Sheets and stopped immediately.\n\n**📋 Variable Extraction & Logging**\nAll approved form fields are extracted and mapped into clean variables. The workflow looks up the Clio Contact by email to retrieve their ID, then logs everything into the Google Sheets KPI tracker for a full audit trail.\n\n**📅 Matter Lookup & SOL Calendar**\nFinds the existing Clio Matter linked to this contact. Creates an all-day calendar event on the Responsible Attorney's calendar for the Statute of Limitations deadline — automatically set 8 years from the accident date.\n\n**🔧 Dynamic Custom Field Mapping**\nFetches all Clio custom field definitions and existing Matter field value IDs, then joins them into a single lookup map so any field can be updated dynamically — no hardcoded IDs needed.\n\n**🧠 Pronouns & Injury Paragraph**\nComputes 3 fields based on extracted data: his/her and he/she based on client gender, and a full injury paragraph — property-damage-only text if no injuries were reported, bodily injury text if injuries were recorded. These populate directly inside the Retainer Agreement template.\n\n**📝 Clio Matter Update**\nPATCHes all case data to the existing Matter: accident date, location, description, defendant, plate number, vehicle, gender, injury count, SOL date, pronouns, and injury paragraph. PATCH is used instead of POST to avoid creating duplicate records.\n\n**🔗 Seasonal Booking Link**\nChecks the current month in New York timezone and selects the correct consultation link — in-office from March to August, virtual from September to February.\n\n**📄 Retainer Agreement Generation**\nTriggers Clio's document automation API using the Matter ID and template ID. A fully pre-filled Retainer Agreement PDF is generated inside Clio. A wait node pauses execution to prevent fetching the document before it is ready.\n\n**📎 Document Retrieval**\nFetches the most recently generated document from the Matter and checks that it actually exists before proceeding. If not ready, the workflow loops back and waits. The client email is then retrieved from Google Sheets and deduplicated to ensure only one email is ever sent per case.\n\n**📧 Client Email Delivery**\nDownloads the Retainer Agreement PDF from Clio and attaches it to a personalized HTML email sent via Gmail. The email includes the accident summary and a seasonal Calendly booking link. The case is then marked as Completed in the KPI tracker.",
+        "height": 1008,
+        "width": 704,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1440,
+        208
+      ],
+      "typeVersion": 1,
+      "id": "3abec785-4d8a-4828-aa0a-342fa16d4488",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## ⚠️ Error Handling\nIf any node in this workflow fails, the error is automatically caught and forwarded to the Error Logger workflow. It logs the failure details into Google Sheets, where the KPI tracker dashboard displays the live error count.",
+        "height": 288,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -704,
+        256
+      ],
+      "typeVersion": 1,
+      "id": "2ed16a0e-67e9-4ae5-b8b2-34848b69f578",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA",
+          "mode": "list",
+          "cachedResultName": "KPIs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 270289194,
+          "mode": "list",
+          "cachedResultName": "intake_cases",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit#gid=270289194"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "Completed",
+            "euuid": "={{ $('Recieves form ').item.json.body.email_uuid }}",
+            "action": "rejected"
+          },
+          "matchingColumns": [
+            "euuid"
+          ],
+          "schema": [
+            {
+              "id": "euuid",
+              "displayName": "euuid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_name",
+              "displayName": "client_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "accident_date",
+              "displayName": "accident_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "defendant_name",
+              "displayName": "defendant_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "accident_description",
+              "displayName": "accident_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vehicle_info",
+              "displayName": "vehicle_info",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "injuries",
+              "displayName": "injuries",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "confidence_score",
+              "displayName": "confidence_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "paralegal_notes",
+              "displayName": "paralegal_notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "matter_id",
+              "displayName": "matter_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "sol_date",
+              "displayName": "sol_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "template_id",
+              "displayName": "template_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "client_gender",
+              "displayName": "client_gender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "form_link",
+              "displayName": "form_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -224,
+        736
+      ],
+      "id": "7bd0da5e-6783-4986-92d4-3d3121ebb17e",
+      "name": "Logs the result",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Tj2xi5A0N2Jl6VC7",
+          "name": "Anas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "12160101-e59b-4eb1-a893-9d3adff9c9b5",
+              "leftValue": "={{ $json.meta.records }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2928,
+        496
+      ],
+      "id": "44b3abe6-78f3-4628-b66f-2921a150cb09",
+      "name": "Download Link exists?"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA",
+          "mode": "list",
+          "cachedResultName": "KPIs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 270289194,
+          "mode": "list",
+          "cachedResultName": "intake_cases",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit#gid=270289194"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "euuid",
+              "lookupValue": "={{ $('Get all the approved variables').first().json.email_uuid }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3152,
+        496
+      ],
+      "id": "3f3ed5e8-d39f-422f-a370-5fae0c682f9d",
+      "name": "Get Email ID",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Tj2xi5A0N2Jl6VC7",
+          "name": "Anas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9bde4683-b9e3-4668-8652-874002fc9136",
+              "leftValue": "={{ $json.email_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3376,
+        496
+      ],
+      "id": "85459556-503a-4ebe-9e57-ed0dedc543de",
+      "name": "Exists?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA",
+          "mode": "list",
+          "cachedResultName": "KPIs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 270289194,
+          "mode": "list",
+          "cachedResultName": "intake_cases",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit#gid=270289194"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "matter_id": "={{ $('Get Matter ID').first().json.data[0].id }}",
+            "status": "Completed",
+            "row_number": 0,
+            "euuid": "={{ $('Get all the approved variables').item.json.email_uuid }}"
+          },
+          "matchingColumns": [
+            "euuid"
+          ],
+          "schema": [
+            {
+              "id": "euuid",
+              "displayName": "euuid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_name",
+              "displayName": "client_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "accident_date",
+              "displayName": "accident_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "defendant_name",
+              "displayName": "defendant_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "accident_description",
+              "displayName": "accident_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vehicle_info",
+              "displayName": "vehicle_info",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "injuries",
+              "displayName": "injuries",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "confidence_score",
+              "displayName": "confidence_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "paralegal_notes",
+              "displayName": "paralegal_notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "matter_id",
+              "displayName": "matter_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sol_date",
+              "displayName": "sol_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "template_id",
+              "displayName": "template_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "client_gender",
+              "displayName": "client_gender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "form_link",
+              "displayName": "form_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4272,
+        496
+      ],
+      "id": "1407833e-81bc-4f5a-8684-a936431f4117",
+      "name": "Update status to Completed",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Tj2xi5A0N2Jl6VC7",
+          "name": "Anas"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Recieves form ": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n-latest-ydsf.onrender.com",
+            "user-agent": "axios/1.13.6",
+            "content-length": "1053",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1",
+            "cf-connecting-ip": "35.240.167.94",
+            "cf-ipcountry": "SG",
+            "cf-ray": "9d67b5076f92fd7d-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "content-type": "application/json",
+            "render-proxy-ttl": "4",
+            "rndr-id": "0b28c178-7e96-49ee",
+            "true-client-ip": "35.240.167.94",
+            "x-forwarded-for": "35.240.167.94, 172.70.208.77",
+            "x-forwarded-proto": "https",
+            "x-request-start": "1772531114169811"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "case_id": "1772531091974",
+            "action": "rejected",
+            "matter_id": 1862221265,
+            "template_id": 10221635,
+            "email_uuid": "19cb06700f038412",
+            "fields": {
+              "accident_date": "2018-12-06",
+              "accident_location": "FLATBUSH AVENUE AND PLAZA STREET EAST, KINGS, NY",
+              "accident_description": "Vehicle 1 was traveling northbound on Flatbush Avenue when it was involved in a sideswipe collision with Vehicle 2. Both drivers provided conflicting accounts claiming the other vehicle merged into their lane. No injuries were reported at the scene by the investigating officer.",
+              "defendant_name": "LIONEL FRANCOIS",
+              "client_plate_number": "XCGY85",
+              "client_vehicle_year_and_make": "2010 FREIGHTLINER",
+              "client_gender": "Male",
+              "number_of_injured": "0",
+              "statute_of_limitations_date": "2026-12-06",
+              "confidence_score": 100,
+              "matter_id": 1862221265,
+              "template_id": 10221635,
+              "email_uuid": "19cb06700f038412",
+              "case_id": "1772531091974",
+              "pdf_url": "/uploads/1772531091947-GUILLERMO_REYES_v_LIONEL_FRANCOIS_et_al_EXHIBIT_S__XX (1).pdf",
+              "submitted": false,
+              "created_at": "2026-03-03T09:44:51.974Z"
+            },
+            "paralegal_notes": "N/A"
+          },
+          "webhookUrl": "https://n8n-latest-ydsf.onrender.com/webhook/hit",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Get Custom Field Names": {
+      "main": [
+        [
+          {
+            "node": "Get Matter Field Value IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Matter Field Value IDs": {
+      "main": [
+        [
+          {
+            "node": "Map Names to Value IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Names to Value IDs": {
+      "main": [
+        [
+          {
+            "node": "Injury Para & Pronouns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Matter ID": {
+      "main": [
+        [
+          {
+            "node": "Do a calender entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Clio records": {
+      "main": [
+        [
+          {
+            "node": "Get Booking Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a document Automation": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Injury Para & Pronouns": {
+      "main": [
+        [
+          {
+            "node": "Update Clio records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recieves form ": {
+      "main": [
+        [
+          {
+            "node": "Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approved?": {
+      "main": [
+        [
+          {
+            "node": "Get all the approved variables",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Logs the result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all the approved variables": {
+      "main": [
+        [
+          {
+            "node": "Get Contact ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Contact ID": {
+      "main": [
+        [
+          {
+            "node": "Update with all the approved variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update with all the approved variables": {
+      "main": [
+        [
+          {
+            "node": "Get Matter ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Do a calender entry": {
+      "main": [
+        [
+          {
+            "node": "Get Custom Field Names",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Download Link": {
+      "main": [
+        [
+          {
+            "node": "Download Link exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Attachment": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Booking Link": {
+      "main": [
+        [
+          {
+            "node": "Create a document Automation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Update status to Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Create Download Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Download Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Attachment1": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Link exists?": {
+      "main": [
+        [
+          {
+            "node": "Get Email ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Email ID": {
+      "main": [
+        [
+          {
+            "node": "Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Exists?": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "1Di2370F4GeeOhCZ",
+    "callerPolicy": "workflowsFromSameOwner",
+    "binaryMode": "separate"
+  },
+  "versionId": "947b6370-54c7-4356-a960-5b8bda272760",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e293711f704af7603502480ad2120188d5c27e9daa8f96b442cde50ae10794ea"
+  },
+  "id": "5ncSNvMjIy3dKX9r5H7WS",
+  "tags": [
+    {
+      "updatedAt": "2026-02-28T08:28:46.014Z",
+      "createdAt": "2026-02-28T08:28:46.014Z",
+      "id": "kCLy8but8cpWRpWa",
+      "name": "Anas"
+    }
+  ]
+}

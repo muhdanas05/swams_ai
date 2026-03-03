@@ -1,0 +1,1331 @@
+{
+  "name": "Email-Handler - Final",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "includeSpamTrash": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -640,
+        256
+      ],
+      "id": "bc15a07a-ac92-417f-af65-1626eeaf1e78",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7kOqVS5XI29WQoTH",
+          "name": "Anas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $json.id }}",
+        "simple": false,
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -416,
+        256
+      ],
+      "id": "dd2beccc-a7df-4db1-ae6c-08d392886f1b",
+      "name": "Get a message",
+      "webhookId": "a7641dde-5140-43e1-bb13-c8b2f2c54372",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7kOqVS5XI29WQoTH",
+          "name": "Anas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.cloud.llamaindex.ai/api/v2/parse/{{ $('Extract the document using llamaparse').first().json.id }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "expand",
+              "value": "text,markdown"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer llx-dSRGjVpuEPPeSopkGQsXEItNfv62QMcb8T4xufT2lSctsXJn"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1552,
+        80
+      ],
+      "id": "6fe2d76d-21c1-4b24-8842-fcc94066b21b",
+      "name": "Checks Status"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.content.parts[0].text;\nconst parsed = JSON.parse(raw);\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2352,
+        160
+      ],
+      "id": "fa74b1cf-8720-40d4-a166-cb4e590b4290",
+      "name": "Parse"
+    },
+    {
+      "parameters": {
+        "url": "https://app.clio.com/api/v4/matters.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "client_id",
+              "value": "={{ $json.data[0].id }}"
+            },
+            {
+              "name": "fields",
+              "value": "id,display_number,description"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3248,
+        160
+      ],
+      "id": "c22b279b-ad0b-4014-acc9-7458cb410716",
+      "name": "Get Matter ID",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "ZyLuEy18Qhp6Wt79",
+          "name": "Clio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://app.clio.com/api/v4/contacts.json?query=talent.legal-engineer.hackathon.automation-email@swans.co\"&fields=id,name,matters",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "Guillermo Reyes"
+            },
+            {
+              "name": "fields",
+              "value": "id,name"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3024,
+        160
+      ],
+      "id": "5fa42590-9b3c-4476-9bad-88b2d0bd0c59",
+      "name": "Get Contact ID",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "ZyLuEy18Qhp6Wt79",
+          "name": "Clio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://swamsai-production.up.railway.app/webhook/new-case",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "pdf",
+              "inputDataFieldName": "attachment_0"
+            },
+            {
+              "name": "fields",
+              "value": "=[\n  {\n    \"accident_date\": \"{{ $('Parse').item.json.accident_date }}\",\n    \"accident_location\": \"{{ $('Parse').item.json.accident_location }}\",\n    \"accident_description\": \"{{ $('Parse').item.json.accident_description }}\",\n    \"defendant_name\": \"{{ $('Parse').item.json.defendant_name }}\",\n    \"client_plate_number\": \"{{ $('Parse').item.json.client_plate_number }}\",\n    \"client_vehicle_year_and_make\": \"{{ $('Parse').item.json.client_vehicle_year_and_make }}\",\n    \"client_gender\": \"{{ $('Parse').item.json.client_gender }}\",\n    \"number_of_injured\": {{ $('Parse').item.json.number_of_injured }},\n    \"statute_of_limitations_date\": \"{{ $('Parse').item.json.statute_of_limitations_date }}\",\n\"confidence_score\": {{ $('Parse').item.json.confidence }},\n\"matter_id\" : {{ $('Get Matter ID').item.json.data[0].id }},\n\"template_id\" : 10221635,\n\"email_uuid\" : \"{{ $('Get a message').first().json.id }}\"\n  }\n]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3696,
+        160
+      ],
+      "id": "135ff4f1-2d3c-4743-9f33-0dd1d588e56e",
+      "name": "Create a form Link"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1328,
+        160
+      ],
+      "id": "b5761220-3edb-4b4f-afeb-b9a5256fe9bf",
+      "name": "Wait",
+      "webhookId": "b0ecb3d3-fbab-40ab-a4d1-f7b7616767e7"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $('Get a message').all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $('Get a message').all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3472,
+        160
+      ],
+      "id": "3593b2ce-8360-4c34-9e70-e3bfaabdf4d5",
+      "name": "Get Police Report"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        464,
+        400
+      ],
+      "id": "a4171448-57b0-4d1b-9f2c-f2506b446e13",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA",
+          "mode": "list",
+          "cachedResultName": "KPIs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 270289194,
+          "mode": "list",
+          "cachedResultName": "intake_cases",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit#gid=270289194"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "euuid",
+              "lookupValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        16,
+        256
+      ],
+      "id": "6a6bf211-baea-46f4-96bf-a8a88e4e250e",
+      "name": "Check if that email is already processed",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Tj2xi5A0N2Jl6VC7",
+          "name": "Anas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c31b5a98-9ee1-4740-8e6a-2c19b3394034",
+              "leftValue": "={{ $json.euuid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "81dfae3b-3a70-4e07-a2a4-a48213736bbb",
+              "leftValue": "={{ $json.euuid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        240,
+        256
+      ],
+      "id": "46b0c6c7-2cc4-49bd-a714-9cead5236e47",
+      "name": "Has not been processed?"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA",
+          "mode": "list",
+          "cachedResultName": "KPIs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 270289194,
+          "mode": "list",
+          "cachedResultName": "intake_cases",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit#gid=270289194"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "euuid": "={{ $('Get a message').first().json.id }}",
+            "email_id": "={{ $('Get a message').first().json.from.value[0].address }}"
+          },
+          "matchingColumns": [
+            "euuid"
+          ],
+          "schema": [
+            {
+              "id": "euuid",
+              "displayName": "euuid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_name",
+              "displayName": "client_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "accident_date",
+              "displayName": "accident_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "defendant_name",
+              "displayName": "defendant_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "accident_description",
+              "displayName": "accident_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vehicle_info",
+              "displayName": "vehicle_info",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "injuries",
+              "displayName": "injuries",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "confidence_score",
+              "displayName": "confidence_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "paralegal_notes",
+              "displayName": "paralegal_notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "matter_id",
+              "displayName": "matter_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "sol_date",
+              "displayName": "sol_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "template_id",
+              "displayName": "template_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "client_gender",
+              "displayName": "client_gender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "form_link",
+              "displayName": "form_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        464,
+        160
+      ],
+      "id": "8a8758f7-0e28-464f-9638-a673cb915797",
+      "name": "Append the email uuid",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Tj2xi5A0N2Jl6VC7",
+          "name": "Anas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloud.llamaindex.ai/api/v2/parse/upload",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer llx-dSRGjVpuEPPeSopkGQsXEItNfv62QMcb8T4xufT2lSctsXJn"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "configuration",
+              "value": "{\"tier\":\"agentic\",\"version\":\"latest\"}"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "attachment_0"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1072,
+        160
+      ],
+      "id": "36acee50-2226-4624-8ff2-2c3f01e1a777",
+      "name": "Extract the document using llamaparse"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c4192da7-4a7f-42fb-b02f-875fd4165a60",
+              "leftValue": "={{ $json.job.status }}",
+              "rightValue": "COMPLETED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1776,
+        160
+      ],
+      "id": "9ee5ae51-e63b-4d2d-8ae6-43ae9d7a6132",
+      "name": "Checks Status1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3-flash-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3-flash-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Extract the required data from this police report:\nFile Name : {{$('Code in JavaScript').first().binary.attachment_0.fileName}}\nReport : \n{{ $json.markdown.pages.toJsonString() }}\n"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "builtInTools": {},
+        "options": {
+          "systemMessage": "=You are a legal data extraction assistant for a personal injury law firm. Your job is to extract structured data from parsed police report text and return it as clean JSON only — no preamble, no explanation, no markdown backticks.\n\nAlways return this exact JSON structure:\n{\n  \"accident_date\": \"YYYY-MM-DD\",\n  \"accident_location\": \"\",\n  \"accident_description\": \"\",\n  \"defendant_name\": \"\",\n  \"client_plate_number\": \"\",\n  \"client_vehicle_year_and_make\": \"\",\n  \"client_gender\": \"\",\n  \"number_of_injured\": 0,\n  \"statute_of_limitations_date\": \"YYYY-MM-DD\",\n  \"confidence\": 86\n}\n\nRules:\n- The CLIENT is the plaintiff — identified by the first name in the filename before \"_v_\". Find this person in the report and extract their details.\n- The DEFENDANT is the opposing party — identified by the name after \"_v_\" in the filename. Find this person in the report and extract their name.\n- defendant_name should be the full name formatted as \"FIRSTNAME LASTNAME\"\n- accident_date and statute_of_limitations_date must be in YYYY-MM-DD format\n- statute_of_limitations_date is always exactly 8 years after accident_date\n- accident_description should be a clean, readable 2-3 sentence summary written in plain English from the officer's notes — do not copy raw report text\n- client_plate_number is the plate number of the vehicle the client was driving or occupying. If the client is a pedestrian or bicyclist, set this to null\n- client_vehicle_year_and_make is the year and make of the client's vehicle (e.g. \"2010 FREIGHTLINER\"). If the client is a pedestrian or bicyclist, set this to null\n- client_gender should be \"Male\", \"Female\", or \"Unknown\" — determine from the Sex field next to the client's name in the report\n- number_of_injured is the total number of injured persons recorded in the report as an integer\n- confidence is an integer from 0 to 100 reflecting how clearly and completely the data could be extracted from this specific report\n- If a field cannot be found, use null\n- Return JSON only, nothing else"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        2000,
+        160
+      ],
+      "id": "c6cbec08-b238-4bfa-86c3-8b53d5a3cf35",
+      "name": "Extract Variables",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "CILfPUvfKRtAq7Nj",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "anasmd017@gmail.com",
+        "subject": "=Approval Required for {{ $('Get Contact ID').first().json.data[0].name }}",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;\">\n  \n  <h2 style=\"color: #2c3e50;\">⚡ New Police Report – Verification Required</h2>\n  \n  <p>A new police report has been processed for <strong>{{ $('Get Contact ID').item.json.data[0].name }}</strong>. Please review the extracted data and take action using the link below.</p>\n\n  <p>Once you approve, the system will automatically:</p>\n  <ul>\n    <li>Update the Matter in Clio</li>\n    <li>Generate and store the Retainer Agreement</li>\n    <li>Add SOL date to Andrew's calendar</li>\n    <li>Send personalized email to the client</li>\n  </ul>\n\n  <div style=\"margin: 30px 0; text-align: center;\">\n    <a href=\"{{ $json.form_url }}\" \n       style=\"background-color: #27ae60; color: white; padding: 14px 30px; \n              text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold;\">\n      ✅ Review & Approve / Reject\n    </a>\n  </div>\n\n  <p style=\"color: #999; font-size: 12px;\">This email was generated automatically by the Richards & Law intake system. Do not reply.</p>\n\n</div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3920,
+        160
+      ],
+      "id": "843379de-d4de-4f43-bdec-4d5bd786f588",
+      "name": "Send an approval message",
+      "webhookId": "a7641dde-5140-43e1-bb13-c8b2f2c54372",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7kOqVS5XI29WQoTH",
+          "name": "Anas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA",
+          "mode": "list",
+          "cachedResultName": "KPIs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 270289194,
+          "mode": "list",
+          "cachedResultName": "intake_cases",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NdaLWcR-zm9iuskoHgJzazD3EReEXI-y5ILPc2Ja7JA/edit#gid=270289194"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "matter_id": "={{ $('Get Matter ID').item.json.data[0].id }}",
+            "status": "Pending",
+            "euuid": "={{ $('Get a message').first().json.id }}",
+            "created_at": "={{$now.toLocal()}}",
+            "form_link": "={{ $('Create a form Link').first().json.form_url }}"
+          },
+          "matchingColumns": [
+            "euuid"
+          ],
+          "schema": [
+            {
+              "id": "euuid",
+              "displayName": "euuid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_name",
+              "displayName": "client_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "accident_date",
+              "displayName": "accident_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "defendant_name",
+              "displayName": "defendant_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "accident_description",
+              "displayName": "accident_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "vehicle_info",
+              "displayName": "vehicle_info",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "injuries",
+              "displayName": "injuries",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "confidence_score",
+              "displayName": "confidence_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "paralegal_notes",
+              "displayName": "paralegal_notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "matter_id",
+              "displayName": "matter_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sol_date",
+              "displayName": "sol_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "template_id",
+              "displayName": "template_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "client_gender",
+              "displayName": "client_gender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "form_link",
+              "displayName": "form_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4144,
+        160
+      ],
+      "id": "e69ce1cf-656f-409f-9e7f-db88c98a0f76",
+      "name": "Update the row",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Tj2xi5A0N2Jl6VC7",
+          "name": "Anas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "89f2b5aa-401f-424e-9667-c3c654e2e1dc",
+              "leftValue": "={{ $json.subject }}",
+              "rightValue": "Police Report",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -208,
+        256
+      ],
+      "id": "e2a3d7b4-5df5-46aa-84da-638fbe662861",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        512
+      ],
+      "id": "87215cb7-9f0f-4114-a6f2-45cd115e94a7",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $('Get a message').all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $('Get a message').all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        160
+      ],
+      "id": "d60db426-2ba0-47ec-af78-75b327b8e604",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "content": "## 🔄 Workflow Overview\n\n**📥 Email Ingestion & Deduplication**\nGmail polls every minute for new emails. When one arrives, the full message is fetched including attachments. The subject line is checked — if it does not contain \"Police Report\" the workflow stops immediately. The email thread ID is then checked against Google Sheets to see if it was already processed. If it was, the workflow stops to prevent duplicate processing. If it is new, the UUID and sender email are logged into the KPI tracker and the flow continues.\n\n**📄 PDF Extraction via LlamaParse**\nThe police report PDF attachment is uploaded to LlamaParse using the agentic tier for high-accuracy OCR. Since LlamaParse processes files asynchronously, a wait node pauses execution and then polls the job status. If the status is not yet COMPLETED the workflow loops back to wait. Once completed, the extracted markdown is ready for AI processing.\n\n**🤖 AI Extraction & Clio Lookup**\nThe extracted markdown is passed to Google Gemini along with the original PDF filename. The filename is critical — it identifies the plaintiff (name before _v_) and defendant (name after _v_). Gemini returns a clean structured JSON with all required case fields. The JSON is then parsed and used to look up the matching Clio Contact by name, which in turn retrieves the associated Matter ID.\n\n**📋 Paralegal Verification Handoff**\nAll extracted fields along with the original PDF are sent to the Swans verification app, which generates a unique form URL for the paralegal to review. An approval email is sent to the paralegal with a direct link to the form. Once sent, the case row in Google Sheets is updated with the form link, Matter ID, and status set to Pending — awaiting the paralegal's approve or reject action.",
+        "height": 752,
+        "width": 512,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1216,
+        -64
+      ],
+      "typeVersion": 1,
+      "id": "b883108f-1706-46ea-b3c6-0a05ac00b45f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## ⚠️ Error Handling\nIf any node in this workflow fails, the error is automatically caught and forwarded to the Error Logger workflow. It logs the failure details into Google Sheets, where the KPI tracker dashboard displays the live error count.",
+        "height": 288,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -640,
+        -96
+      ],
+      "typeVersion": 1,
+      "id": "54a946a8-aee9-43f3-b8fc-343b7fd7e3f4",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "url": "https://app.clio.com/api/v4/document_templates.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1168,
+        -64
+      ],
+      "id": "46dae535-27d6-4b7e-9a79-1ab67b71a723",
+      "name": "Get Template ID",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "ZyLuEy18Qhp6Wt79",
+          "name": "Clio"
+        }
+      },
+      "disabled": true
+    }
+  ],
+  "pinData": {
+    "Gmail Trigger": [
+      {
+        "json": {
+          "id": "19cb06700f038412",
+          "threadId": "19cb06700f038412",
+          "snippet": "Good morning, My name is Guillermo Reyes. I was involved in a traffic accident on December 6, 2018 on Flatbush Avenue in Brooklyn and I am looking for legal representation. Please find my police report",
+          "payload": {
+            "mimeType": "multipart/mixed"
+          },
+          "sizeEstimate": 673115,
+          "historyId": "63724",
+          "internalDate": "1772486052000",
+          "labels": [
+            {
+              "id": "INBOX",
+              "name": "INBOX"
+            },
+            {
+              "id": "IMPORTANT",
+              "name": "IMPORTANT"
+            },
+            {
+              "id": "CATEGORY_PERSONAL",
+              "name": "CATEGORY_PERSONAL"
+            },
+            {
+              "id": "UNREAD",
+              "name": "UNREAD"
+            }
+          ],
+          "From": "Dev and dollars <devanddollars@gmail.com>",
+          "Subject": "Police Report – Guillermo Reyes Accident",
+          "To": "developer <developer7gence@gmail.com>"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a message": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checks Status": {
+      "main": [
+        [
+          {
+            "node": "Checks Status1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse": {
+      "main": [
+        [
+          {
+            "node": "Get Contact ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Matter ID": {
+      "main": [
+        [
+          {
+            "node": "Get Police Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Contact ID": {
+      "main": [
+        [
+          {
+            "node": "Get Matter ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Checks Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a form Link": {
+      "main": [
+        [
+          {
+            "node": "Send an approval message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Police Report": {
+      "main": [
+        [
+          {
+            "node": "Create a form Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if that email is already processed": {
+      "main": [
+        [
+          {
+            "node": "Has not been processed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has not been processed?": {
+      "main": [
+        [
+          {
+            "node": "Append the email uuid",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append the email uuid": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract the document using llamaparse": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checks Status1": {
+      "main": [
+        [
+          {
+            "node": "Extract Variables",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Variables": {
+      "main": [
+        [
+          {
+            "node": "Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an approval message": {
+      "main": [
+        [
+          {
+            "node": "Update the row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Check if that email is already processed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Extract the document using llamaparse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "1Di2370F4GeeOhCZ",
+    "callerPolicy": "workflowsFromSameOwner",
+    "binaryMode": "separate"
+  },
+  "versionId": "ff69aad7-d6d1-463e-a130-0e0ff027aee2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e293711f704af7603502480ad2120188d5c27e9daa8f96b442cde50ae10794ea"
+  },
+  "id": "wXd5CTwl8AItIHY5D7Mri",
+  "tags": [
+    {
+      "updatedAt": "2026-02-28T08:28:46.014Z",
+      "createdAt": "2026-02-28T08:28:46.014Z",
+      "id": "kCLy8but8cpWRpWa",
+      "name": "Anas"
+    }
+  ]
+}
