@@ -261,6 +261,7 @@ app.get('/api/cases', async (req, res) => {
                 accident_date: row.accident_date,
                 confidence_score: parseInt(row.confidence_score) || 0,
                 status: status,
+                action_taken: (status === 'approved') ? row.action : null,
                 created_at: row.created_at || new Date().toISOString(),
                 approved_at: row.approved_at || null,
                 sol_date: row.sol_date || null,

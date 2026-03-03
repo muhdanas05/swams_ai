@@ -14,6 +14,8 @@ function updateDashboard(cases, errorCount) {
     const pendingCountEl = document.getElementById('pending-count');
     const speedToLeadEl = document.getElementById('speed-to-lead');
     const errorCountEl = document.getElementById('error-logs-count') || { innerText: '' };
+    const approvalRateEl = document.getElementById('approval-rate');
+    const approvalCountsEl = document.getElementById('approval-counts');
     const casesBody = document.getElementById('cases-body');
 
     // Reset table
@@ -28,6 +30,8 @@ function updateDashboard(cases, errorCount) {
     let totalSpeed = 0;
     let approvedWithTime = 0;
     let solRisk = 0;
+    let actionApproved = 0;
+    let actionRejected = 0;
 
     const now = new Date();
     const ninetyDays = 90 * 24 * 60 * 60 * 1000;
@@ -43,6 +47,13 @@ function updateDashboard(cases, errorCount) {
         if (c.status === 'approved' || c.status === 'completed') {
             totalSpeed += 55;
             approvedWithTime++;
+
+            // Check action column mapping from server
+            if (c.action_taken) {
+                const act = c.action_taken.trim().toLowerCase();
+                if (act === 'approved' || act === 'approve') actionApproved++;
+                if (act === 'rejected' || act === 'reject') actionRejected++;
+            }
         }
 
         // SOL Risk (< 90 days)
@@ -99,6 +110,17 @@ function updateDashboard(cases, errorCount) {
 
     if (document.getElementById('error-logs-count')) {
         document.getElementById('error-logs-count').innerText = errorCount;
+    }
+
+    // Update Approval Rate
+    const totalProcessedActions = actionApproved + actionRejected;
+    if (totalProcessedActions > 0) {
+        const rate = Math.round((actionApproved / totalProcessedActions) * 100);
+        if (approvalRateEl) approvalRateEl.innerText = `${rate}%`;
+        if (approvalCountsEl) approvalCountsEl.innerText = `${actionApproved} Approved / ${totalProcessedActions} Total`;
+    } else {
+        if (approvalRateEl) approvalRateEl.innerText = `0%`;
+        if (approvalCountsEl) approvalCountsEl.innerText = `0 Approved / 0 Total`;
     }
 
     // Pulse effect if pending count > 0
